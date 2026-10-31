@@ -1,0 +1,154 @@
+:root {
+  --fondo: #f6f2ec; --superficie: #fffdf9; --superficie-2: #f1ebe2; --texto: #2b2420; --texto-2: #6d625a;
+  --borde: #ddd3c6; --acento: #8a3b12; --acento-2: #b4561f; --sombra: 0 6px 24px rgba(40, 25, 10, .18);
+  --panel-w: 400px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #1d1916; --superficie: #26211d; --superficie-2: #312a25; --texto: #efe7de; --texto-2: #b3a79c;
+    --borde: #463c35; --acento: #f08a4b; --acento-2: #ffad73; --sombra: 0 6px 24px rgba(0, 0, 0, .5);
+  }
+}
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+html, body { margin: 0; height: 100%; background: var(--fondo); color: var(--texto);
+  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
+#mapa { position: fixed; inset: 0; right: var(--panel-w); background: #cfd8dc }
+button { font: inherit; color: inherit; cursor: pointer }
+h2 { font-size: 1.15rem; margin: .2rem 0 .5rem }
+h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); margin: 1rem 0 .4rem }
+h3 small { text-transform: none; letter-spacing: 0; font-weight: 400 }
+.nota { color: var(--texto-2); font-size: .82rem }
+.tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: 12px; box-shadow: var(--sombra) }
+
+/* barra de búsqueda */
+#barra { position: fixed; top: 10px; left: 10px; width: min(380px, calc(100vw - var(--panel-w) - 80px)); z-index: 1000 }
+.buscar { display: flex; align-items: center; gap: 6px; background: var(--superficie); border: 1px solid var(--borde);
+  border-radius: 999px; padding: 0 14px; box-shadow: var(--sombra) }
+.buscar input { flex: 1; border: 0; background: none; color: var(--texto); font: inherit; padding: 11px 0; outline: none; min-width: 0 }
+#sugerencias { margin-top: 6px; background: var(--superficie); border: 1px solid var(--borde); border-radius: 12px;
+  box-shadow: var(--sombra); max-height: 50vh; overflow: auto }
+#sugerencias button { display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; border: 0; background: none;
+  padding: 8px 12px; border-bottom: 1px solid var(--borde) }
+#sugerencias button:hover, #sugerencias button.on { background: var(--superficie-2) }
+
+/* leyenda y reloj */
+#leyenda { position: fixed; left: 10px; bottom: 22px; z-index: 900; padding: 8px 10px; font-size: .78rem; max-width: 230px;
+  max-height: 42vh; overflow: auto }
+#leyenda b { display: block; margin-bottom: 4px; cursor: pointer }
+#leyenda b::after { content: ' ▾'; color: var(--texto-2) }
+#leyenda.plegada div { display: none }
+#leyenda.plegada b { margin: 0 }
+#leyenda.plegada b::after { content: ' ▸' }
+#leyenda div { display: flex; gap: 6px; align-items: center; margin: 2px 0 }
+#leyenda i { width: 14px; height: 10px; border-radius: 2px; border: 1px solid rgba(0, 0, 0, .25); flex: none }
+#reloj { position: fixed; top: 64px; left: 50%; transform: translateX(calc(-50% - var(--panel-w) / 2)); z-index: 1000;
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; min-width: 260px }
+#reloj div { flex: 1; text-align: center }
+#reloj b { display: block; font-size: 1rem }
+#reloj small { color: var(--texto-2) }
+.btn-ico { border: 1px solid var(--borde); background: var(--superficie-2); border-radius: 50%; width: 34px; height: 34px }
+
+/* panel */
+#panel { position: fixed; top: 0; right: 0; bottom: 0; width: var(--panel-w); background: var(--superficie);
+  border-left: 1px solid var(--borde); display: flex; flex-direction: column; z-index: 1001 }
+#asa { display: none }
+#pestanas { display: flex; border-bottom: 1px solid var(--borde); flex: none }
+#pestanas button { flex: 1; border: 0; background: none; padding: 8px 2px 6px; font-size: .72rem; color: var(--texto-2);
+  border-bottom: 3px solid transparent; display: flex; flex-direction: column; align-items: center; gap: 2px }
+#pestanas button i { font-style: normal; font-size: 1.15rem }
+#pestanas button.on { color: var(--acento); border-bottom-color: var(--acento); font-weight: 700 }
+#cuerpo { flex: 1; overflow: auto; padding: 4px 14px 30px }
+.pag { display: none }
+.pag.on { display: block }
+.resumen { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--superficie-2); font-size: .88rem }
+.resumen b { font-size: 1.25rem; color: var(--acento) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { border: 1px solid var(--borde); background: var(--superficie); border-radius: 999px; padding: 4px 10px; font-size: .8rem;
+  display: inline-flex; align-items: center; gap: 6px }
+.chip i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .3) }
+.chip small { color: var(--texto-2) }
+.chip.on { background: var(--acento); border-color: var(--acento); color: #fff }
+.chip.on small { color: #ffe }
+.segm { display: flex; border: 1px solid var(--borde); border-radius: 10px; overflow: hidden }
+.segm button { flex: 1; border: 0; background: var(--superficie); padding: 6px 4px; font-size: .82rem }
+.segm button + button { border-left: 1px solid var(--borde) }
+.segm button.on { background: var(--acento); color: #fff; font-weight: 600 }
+.chk { display: flex; gap: 8px; align-items: center; font-size: .86rem; margin: 4px 0 }
+.fila-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 }
+.btn { border: 1px solid var(--borde); background: var(--superficie-2); border-radius: 999px; padding: 6px 14px; font-size: .85rem }
+.btn.primario { background: var(--acento); border-color: var(--acento); color: #fff; font-weight: 600 }
+#lista { list-style: none; padding: 0; margin: 0 }
+#lista li { display: flex; gap: 8px; align-items: center; padding: 7px 4px; border-bottom: 1px solid var(--borde); cursor: pointer }
+#lista li:hover { background: var(--superficie-2) }
+#lista li i { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid rgba(0, 0, 0, .3) }
+#lista li span { flex: 1; min-width: 0 }
+#lista li small { display: block; color: var(--texto-2); font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+#lista li em { font-style: normal; font-size: .7rem; color: var(--texto-2) }
+.mas { width: 100%; margin-top: 8px }
+
+/* tabla cronoestratigráfica (como en Fósiles de Chile) */
+.ics { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: .72rem; line-height: 1.15; margin: 6px 0 }
+.ics th { font-size: .62rem; font-weight: 700; color: var(--texto-2); text-align: left; padding: 2px 3px; position: sticky; top: -4px;
+  background: var(--superficie); z-index: 1 }
+.ics th:nth-child(1), .ics th:nth-child(2) { width: 22px }
+.ics th:nth-child(3) { width: 30px }
+.ics th:nth-child(4) { width: 22% }
+.ics th:nth-child(6) { width: 46px; text-align: right }
+.ics th:nth-child(7) { width: 34px; text-align: right }
+.ics td { border: 1px solid rgba(0, 0, 0, .18); padding: 2px 4px; cursor: pointer; vertical-align: middle; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; height: 19px }
+.ics td.ics-eon:not(.ics-hoja) span, .ics td.ics-era:not(.ics-hoja) span, .ics td.ics-periodo:not(.ics-hoja) span {
+  writing-mode: vertical-rl; transform: rotate(180deg); display: inline-block; white-space: nowrap; font-weight: 700 }
+.ics td:not(.ics-hoja) { text-align: center; padding: 2px 1px }
+.ics td.on { outline: 3px solid #3b1a08; outline-offset: -3px; font-weight: 800 }
+.ics td.ics-ma, .ics td.ics-n { background: none; cursor: default; text-align: right; color: var(--texto-2); border-color: var(--borde);
+  font-variant-numeric: tabular-nums }
+.ics td.ics-n { color: var(--texto); font-weight: 700; position: relative }
+.ics td.ics-n.cero { font-weight: 400 }
+.ics td.ics-n b { position: absolute; right: 0; top: 2px; bottom: 2px; background: var(--acento); opacity: .18; border-radius: 2px }
+.ics-precambrico td { height: 17px }
+
+/* perfil tiempo–latitud */
+#perfil svg { width: 100%; display: block; margin-top: 8px; font-size: 10px }
+#perfil .barra-u { cursor: pointer }
+#perfil .barra-u:hover { stroke: #000; stroke-width: 1 }
+#perfil text { fill: var(--texto-2) }
+
+/* ficha */
+.ficha h2 { margin-top: 10px }
+.ficha .sub { color: var(--texto-2); font-size: .85rem; margin-bottom: 8px }
+.ficha dl { margin: 0 }
+.ficha dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); margin-top: 12px }
+.ficha dd { margin: 3px 0 0; font-size: .9rem }
+.ficha .ref { color: var(--texto-2); font-size: .78rem }
+.insignia { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: #2f7d4f; color: #fff;
+  vertical-align: middle; margin-left: 4px }
+.insignia.auto { background: var(--texto-2) }
+.barra-edad { position: relative; height: 22px; border-radius: 6px; overflow: hidden; display: flex; margin-top: 6px;
+  border: 1px solid var(--borde) }
+.barra-edad span { flex: 1 }
+.barra-edad b { position: absolute; top: -1px; bottom: -1px; border: 2px solid #111; border-radius: 3px; min-width: 4px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .8) }
+.enlace { color: var(--acento); text-decoration: underline; cursor: pointer; background: none; border: 0; padding: 0; font: inherit }
+.lista-cartas { margin: 4px 0 0; padding-left: 18px; font-size: .85rem }
+
+/* popup */
+.leaflet-popup-content { margin: 10px 12px; font: 13px/1.35 system-ui, sans-serif }
+.leaflet-popup-content button.enlace { display: block; text-align: left; margin: 3px 0 }
+.etiqueta-u { font-weight: 600 }
+
+/* teléfono: el panel es una hoja inferior */
+@media (max-width: 760px) {
+  :root { --panel-w: 0px }
+  #mapa { right: 0; bottom: 0 }
+  #barra { width: calc(100vw - 20px) }
+  #panel { top: auto; left: 0; width: 100%; height: 52vh; border-left: 0; border-top: 1px solid var(--borde);
+    border-radius: 16px 16px 0 0; box-shadow: var(--sombra); transition: height .25s }
+  #panel.min { height: 108px }
+  #asa { display: block; border: 0; background: none; padding: 6px 0 2px; flex: none }
+  #asa span { display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--borde); margin: 0 auto }
+  #leyenda { bottom: calc(52vh + 10px); max-height: 25vh }
+  #panel.min ~ #leyenda, body.panel-min #leyenda { bottom: 118px }
+  #reloj { transform: translateX(-50%) }
+}

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Unidades Geológicas de Chile</title>
+<meta name="description" content="Visor de las formaciones, complejos, intrusivos y volcanes de Chile: dónde afloran, de qué rocas son, qué edad tienen y con qué se correlacionan.">
+<meta name="theme-color" content="#3b2f2a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icono.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icono-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="app.css?v=3">
+</head>
+<body>
+<div id="mapa" aria-label="Mapa de unidades geológicas"></div>
+
+<div id="barra">
+  <label class="buscar"><span aria-hidden="true">🔎</span>
+    <input id="q" type="search" placeholder="Buscar: Abanico, ignimbrita, Atacama…" autocomplete="off" spellcheck="false">
+  </label>
+  <div id="sugerencias" role="listbox" hidden></div>
+</div>
+
+<div id="leyenda" class="tarjeta"></div>
+<div id="reloj" class="tarjeta" hidden>
+  <button id="reloj-pausa" class="btn-ico" title="Pausar">⏸</button>
+  <div><b id="reloj-nombre"></b><small id="reloj-ma"></small></div>
+  <button id="reloj-cerrar" class="btn-ico" title="Salir de la máquina del tiempo">✕</button>
+</div>
+
+<aside id="panel" aria-label="Panel">
+  <button id="asa" aria-label="Mostrar u ocultar el panel"><span></span></button>
+  <nav id="pestanas" role="tablist">
+    <button role="tab" data-p="unidades" class="on"><i>🪨</i>Unidades</button>
+    <button role="tab" data-p="edad"><i>⏳</i>Edad</button>
+    <button role="tab" data-p="perfil"><i>📈</i>Tiempo–latitud</button>
+    <button role="tab" data-p="ficha"><i>📄</i>Ficha</button>
+    <button role="tab" data-p="acerca"><i>ℹ️</i>Acerca</button>
+  </nav>
+  <div id="cuerpo">
+    <section id="p-unidades" class="pag on">
+      <div class="resumen" id="resumen"></div>
+      <h3>Colorear por</h3>
+      <div class="segm" id="color-por">
+        <button data-c="edad" class="on">Edad</button><button data-c="lito">Litología</button><button data-c="tipo">Tipo</button>
+      </div>
+      <h3>Tipo de unidad</h3>
+      <div class="chips" id="f-tipo"></div>
+      <h3>Litología <small>(cualquiera de las elegidas)</small></h3>
+      <div class="chips" id="f-lito"></div>
+      <h3>Ambiente</h3>
+      <div class="segm" id="f-amb"><button data-a="" class="on">Todos</button><button data-a="marino">Marino</button><button data-a="continental">Continental</button></div>
+      <h3>Más filtros</h3>
+      <label class="chk"><input type="checkbox" id="f-rev"> Solo las revisadas a mano</label>
+      <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen polígono (GDB)</label>
+      <label class="chk"><input type="checkbox" id="f-gen"> Incluir depósitos e intrusivos sin nombre propio</label>
+      <div class="fila-btns"><button class="btn" id="limpiar">Quitar filtros</button><button class="btn" id="maquina">▶ Máquina del tiempo</button></div>
+      <h3 id="lista-titulo">Unidades</h3>
+      <ol id="lista"></ol>
+    </section>
+    <section id="p-edad" class="pag"></section>
+    <section id="p-perfil" class="pag">
+      <p class="nota">Cada barra es una unidad: va de su edad más antigua a la más joven, a la latitud donde aflora. Así se ve cómo
+        el magmatismo y la sedimentación se movieron en el tiempo (por ejemplo, la migración del arco hacia el este desde el Jurásico).
+        Respeta los filtros; toca una barra para ver la ficha.</p>
+      <div class="segm" id="escala-t"><button data-e="raiz" class="on">Escala de raíz cuadrada</button><button data-e="lin">Lineal</button></div>
+      <div id="perfil"></div>
+    </section>
+    <section id="p-ficha" class="pag"><p class="nota">Toca una unidad en el mapa o en la lista.</p></section>
+    <section id="p-acerca" class="pag">
+      <h2>Unidades geológicas de Chile</h2>
+      <p>Formaciones, estratos, grupos, complejos, intrusivos y volcanes descritos en las <b>Cartas Geológicas de Chile</b>
+        (SERNAGEOMIN), con lo que dice de ellas el libro <i>The Geology of Chile</i> (Moreno y Gibbons, eds., 2007) y el resto de la
+        bibliografía del corpus.</p>
+      <h3>De dónde sale cada cosa</h3>
+      <ul>
+        <li><b>Polígonos</b>: unidades de las geodatabases (GDB) oficiales de 93 cartas, simplificados a ~250 m. Una unidad que
+          aparece en varias GDB junta todos sus polígonos.</li>
+        <li><b>Puntos</b>: las unidades sin GDB se ubican dentro del marco de cada carta que las describe; el punto indica la carta,
+          no el afloramiento. Al elegir la unidad se dibuja el marco.</li>
+        <li><b>Edad, litología, localidad tipo y correlaciones</b>: tabla <i>Unidades_geologicas_Chile.xlsx</i>. Las fichas
+          marcadas «revisada a mano» se contrastaron con el texto de la carta; las demás vienen de la extracción automática.</li>
+        <li><b>Edad numérica</b> (para filtrar y colorear): leída del texto de edad («Mioceno Inferior», «ca. 18,6 Ma») con la Tabla
+          Cronoestratigráfica Internacional 2024/12. Si la carta no da edad, se usa la de la GDB.</li>
+      </ul>
+      <p class="nota">No es un producto oficial de SERNAGEOMIN. Para trabajo formal, consultar la carta original.</p>
+      <p class="nota" id="fecha-datos"></p>
+    </section>
+  </div>
+</aside>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js?v=3"></script>
+</body>
+</html>

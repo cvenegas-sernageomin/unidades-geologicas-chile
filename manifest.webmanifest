@@ -1,0 +1,16 @@
+{
+  "name": "Unidades Geológicas de Chile",
+  "short_name": "Unidades Chile",
+  "description": "Formaciones, complejos, intrusivos y volcanes de Chile en un mapa, con filtros por edad y litología.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f2ec",
+  "theme_color": "#3b2f2a",
+  "lang": "es-CL",
+  "icons": [
+    {"src": "icons/icono.svg", "sizes": "any", "type": "image/svg+xml"},
+    {"src": "icons/icono-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
