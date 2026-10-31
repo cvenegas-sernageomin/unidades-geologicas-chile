@@ -1,8 +1,9 @@
 // Service worker de Unidades Geológicas de Chile. Solo toca cachés con prefijo "unidades-".
-const VER = 'unidades-shell-3';
-const SHELL = ['./', 'index.html', 'app.js?v=3', 'app.css?v=3', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
-  'data/unidades.json', 'data/poligonos.json', 'data/cartas.json', 'data/ics.json',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
+const VER = 'unidades-shell-4';
+const SHELL = ['./', 'index.html', 'app.js?v=4', 'app.css?v=4', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
+  'data/unidades.json', 'data/cartas.json', 'data/ics.json',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js'];
 const TESELAS = 'unidades-teselas';
 
 self.addEventListener('install', e => e.waitUntil(caches.open(VER).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));

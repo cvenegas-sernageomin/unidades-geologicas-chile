@@ -9,7 +9,7 @@ Salida (data/): unidades.json, poligonos.json, cartas.json.
 
 Uso: python tools/armar_datos.py
 """
-import json, os, re, sys, glob, hashlib, unicodedata, collections
+import json, os, re, sys, glob, hashlib, unicodedata, collections, math
 from openpyxl import load_workbook
 from shapely.geometry import Polygon, MultiPolygon, mapping
 from shapely.ops import unary_union
@@ -404,6 +404,14 @@ def main():
                         max(cartas[c]["b"][3] for c in cids if c in cartas), max(cartas[c]["b"][1] for c in cids if c in cartas)]
             else:
                 centro, caja = None, None
+            # puntos para el mapa de calor: un punto por afloramiento (parte del polígono) con peso según su área,
+            # o el punto de cada carta si no hay polígono
+            if pol:
+                partes = sorted((Polygon(a[0], a[1:]) for a in pol), key=lambda p: -p.area)[:80]
+                hp = [[round(p.representative_point().x, 3), round(p.representative_point().y, 3),
+                       round(min(1.0, max(0.2, math.log10(1 + p.area * 1.2e4) / 2)), 2)] for p in partes]
+            else:
+                hp = [[x, y, 0.6] for x, y in pts]
             u = {
                 "id": uid, "c": centro, "bb": caja, "n": nombre, "h": hoja, "cat": g("Categoría"), "rev": 1 if rev else 0,
                 "loc": g("Localidad tipo (revisada)") or g("Localidad tipo / definición (mejor dato disponible)"),
@@ -415,7 +423,7 @@ def main():
                 "cl": clases_unidad(nombre, g("Categoría"), g("Litología (revisada)"), rocas,
                                     g("Resumen litológico (texto de la carta)"), lc_gdb),
                 "amb": [a for a, rx in AMBIENTES if re.search(rx, lit + " " + g("Resumen litológico (texto de la carta)"), re.I)],
-                "pts": pts, "gdb": len(regs), "gen": 1 if gen else 0,
+                "pts": pts, "hp": hp, "gdb": len(regs), "gen": 1 if gen else 0,
             }
             U.append(u)
     # enlaces de correlación: nombres de otras unidades citados en el texto de correlaciones

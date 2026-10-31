@@ -35,7 +35,7 @@ const TIPOS = [
 const tipoDe = u => u.cat === 'Unidad' ? 'Secuencia' : (TIPOS.some(t => t[0] === u.cat) ? u.cat : 'Secuencia');
 const TIPO = Object.fromEntries(TIPOS.map(([k, n, c, s1]) => [k, { n, c, s1 }]));
 
-let U = [], BYID = {}, POL = {}, CARTAS = {}, ICS = null, HOJAS = [], META = {};
+let U = [], BYID = {}, CARTAS = {}, ICS = null, HOJAS = [], META = {};
 const filtro = { q: '', tipos: new Set(), lito: new Set(), amb: '', int: null, rev: false, pol: false, gen: false };
 let colorPor = 'edad', sel = null, escalaT = 'raiz';
 
@@ -75,7 +75,7 @@ function colorDe(u) {
 function pasaSinEdad(u) {
   if (!filtro.gen && u.gen) return false;
   if (filtro.rev && !u.rev) return false;
-  if (filtro.pol && !POL[u.id]) return false;
+  if (filtro.pol && !(u.gdb && !u.gen)) return false;
   if (filtro.tipos.size && !filtro.tipos.has(tipoDe(u))) return false;
   if (filtro.lito.size && !u.cl.some(c => filtro.lito.has(c))) return false;
   if (filtro.amb && !u.amb.includes(filtro.amb)) return false;
@@ -95,41 +95,58 @@ const BASES = {
 };
 BASES['Gris claro (Esri)'].addTo(mapa);
 const rend = L.canvas({ padding: 0.3, tolerance: 4 });
-const capaPol = L.layerGroup().addTo(mapa), capaPts = L.layerGroup().addTo(mapa), capaSel = L.layerGroup().addTo(mapa);
+const capaCalor = L.layerGroup().addTo(mapa), capaPts = L.layerGroup(), capaSel = L.layerGroup().addTo(mapa);
 const capaEnl = L.layerGroup().addTo(mapa);
-L.control.layers(BASES, { 'Polígonos (GDB)': capaPol, 'Puntos por carta': capaPts }, { position: 'bottomright' }).addTo(mapa);
-const LAYERS = {};  // id -> {pol, pts[]}
+L.control.layers(BASES, { 'Mapa de calor': capaCalor, 'Puntos de las unidades': capaPts }, { position: 'bottomright' }).addTo(mapa);
+// los puntos se encienden solos al acercarse (con todo el país a la vista solo tapan el calor)
+const ZOOM_PUNTOS = 8;
+mapa.on('zoomend', () => { if (mapa.getZoom() >= ZOOM_PUNTOS) capaPts.addTo(mapa); else capaPts.remove(); });
+let modoCalor = 'periodo';  // 'periodo': una capa de calor por período con su color ICS · 'total': densidad de todo lo filtrado
+const MARCAS = {};  // id -> circleMarkers
 
 function construirCapas() {
   for (const u of U) {
-    const L1 = LAYERS[u.id] = { pol: null, pts: [] };
-    if (POL[u.id]) {
-      L1.pol = L.polygon(POL[u.id].map(p => p.map(r => r.map(([x, y]) => [y, x]))), { renderer: rend, weight: 0.6, fillOpacity: 0.62 });
-      L1.pol.on('click', ev => { L.DomEvent.stop(ev); elegir(u.id, false, ev.latlng); });
-      L1.pol.bindTooltip(u.n, { sticky: true, className: 'etiqueta-u' });
-    } else {
-      for (const [x, y] of u.pts) {
-        const m = L.circleMarker([y, x], { renderer: rend, radius: 4, weight: 0.8, color: '#2b2420', fillOpacity: 0.85 });
-        m.on('click', ev => { L.DomEvent.stop(ev); elegir(u.id, false); });
-        m.bindTooltip(u.n, { className: 'etiqueta-u' });
-        L1.pts.push(m);
-      }
-    }
+    MARCAS[u.id] = (u.gdb && !u.gen ? (u.c ? [u.c] : []) : u.pts).map(([x, y]) => {
+      const m = L.circleMarker([y, x], { renderer: rend, radius: 4, weight: 0.8, color: '#2b2420', fillOpacity: 0.85 });
+      m.on('click', ev => { L.DomEvent.stop(ev); elegir(u.id, false); });
+      m.bindTooltip(u.n, { className: 'etiqueta-u' });
+      return m;
+    });
   }
 }
 
+// leaflet.heat redibuja también al cambiar el tamaño del mapa: con ancho 0 (panel oculto) getImageData revienta
+const _redibujar = L.HeatLayer.prototype._redraw;
+L.HeatLayer.prototype._redraw = function () { if (this._canvas && this._canvas.width && this._canvas.height) _redibujar.call(this); else this._frame = null; };
+// rampa de una capa: claro -> color del período -> oscuro (la transparencia la pone la densidad)
+const rampa = c => ({ 0.25: shade(c, 0.55), 0.6: c, 1: shade(c, -0.45) });
+const RAMPA_TOTAL = { 0.2: '#fde68a', 0.45: '#f59e0b', 0.7: '#dc2626', 1: '#5b0a0a' };
+function capaDeCalor(puntos, gradiente) {
+  const z = mapa.getZoom();
+  return L.heatLayer(puntos, { radius: z <= 5 ? 14 : z <= 7 ? 20 : 26, blur: z <= 5 ? 14 : 20, maxZoom: 9, max: 1, minOpacity: 0.25, gradient: gradiente });
+}
 function pintarMapa() {
-  capaPol.clearLayers(); capaPts.clearLayers();
+  capaCalor.clearLayers(); capaPts.clearLayers();
   const vis = U.filter(pasa);
-  // primero las unidades viejas y grandes, encima las jóvenes
-  vis.sort((a, b) => (b.mx ?? 0) - (a.mx ?? 0));
-  for (const u of vis) {
-    const L1 = LAYERS[u.id], c = colorDe(u);
-    if (L1.pol) { L1.pol.setStyle({ color: shade(c, -0.35), fillColor: c }); capaPol.addLayer(L1.pol); }
-    for (const m of L1.pts) { m.setStyle({ fillColor: c }); capaPts.addLayer(m); }
+  const pts = u => u.hp.map(([x, y, w]) => [y, x, w]);
+  // leaflet.heat revienta con el mapa de ancho 0 (pestaña oculta): se dibuja al tomar tamaño
+  if (!mapa.getSize().x) { mapa.once('resize', () => pintarMapa()); }
+  else if (modoCalor === 'total' || filtro.int) {
+    // con una edad elegida, el calor toma el color de ese intervalo
+    const c = filtro.int ? ICS.X.find(x => x.id === filtro.int.id)?.color : null;
+    capaCalor.addLayer(capaDeCalor(vis.flatMap(pts), c ? rampa(c) : RAMPA_TOTAL));
+  } else {
+    const grupos = new Map();
+    for (const u of vis) { const k = u._icsPer?.id || 'sin'; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(...pts(u)); }
+    // los períodos más antiguos abajo
+    const orden = [...grupos.keys()].filter(k => k !== 'sin').map(k => ICS.X.find(x => x.id === k)).sort((a, b) => b.base - a.base);
+    for (const per of orden) capaCalor.addLayer(capaDeCalor(grupos.get(per.id), rampa(per.color)));
   }
+  for (const u of vis) for (const m of MARCAS[u.id]) { m.setStyle({ fillColor: colorDe(u) }); capaPts.addLayer(m); }
   return vis;
 }
+let tz;
+mapa.on('zoomend', () => { clearTimeout(tz); tz = setTimeout(() => U.length && pintarMapa(), 50); });
 function shade(hex, f) {
   const n = parseInt(hex.slice(1), 16), ch = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f));
   return '#' + ch.map(v => v.toString(16).padStart(2, '0')).join('');
@@ -167,8 +184,8 @@ function alternar(set, k) { set.has(k) ? set.delete(k) : set.add(k); aplicar(); 
 
 let LIM = 80;
 function pintarLista(vis) {
-  const conPol = vis.filter(u => POL[u.id]).length;
-  poner($('#resumen'), el('b', {}, fmt(vis.length)), ` unidades a la vista · ${fmt(conPol)} con polígono · ${fmt(vis.length - conPol)} ubicadas por carta`,
+  const conPol = vis.filter(u => u.gdb && !u.gen).length;
+  poner($('#resumen'), el('b', {}, fmt(vis.length)), ` unidades a la vista · ${fmt(conPol)} con afloramientos en las GDB · ${fmt(vis.length - conPol)} ubicadas por carta`,
     filtro.int ? el('div', {}, 'Edad: ', el('b', { style: 'font-size:1em' }, filtro.int.nombre), ` (${escMa(filtro.int.base)} – ${escMa(filtro.int.techo)}) `,
       el('button', { class: 'enlace', onclick: () => { filtro.int = null; aplicar(); } }, 'quitar')) : null);
   const orden = [...vis].sort((a, b) => (b.rev - a.rev) || (b.nf + b.cartas.length * 3) - (a.nf + a.cartas.length * 3));
@@ -301,7 +318,7 @@ function elegir(id, volar, latlng) {
   sel = id;
   const u = BYID[id];
   capaSel.clearLayers(); capaEnl.clearLayers();
-  if (POL[id]) L.polygon(POL[id].map(p => p.map(r => r.map(([x, y]) => [y, x]))), { interactive: false, color: '#111', weight: 2.5, fill: false }).addTo(capaSel);
+  for (const [x, y] of u.hp) L.circleMarker([y, x], { interactive: false, radius: 5, color: '#111', weight: 2, fillColor: '#fff', fillOpacity: 0.6 }).addTo(capaSel);
   for (const c of u.cartas) if (CARTAS[c]) {
     const [s, n, w, e] = CARTAS[c].b;
     L.rectangle([[s, w], [n, e]], { interactive: false, color: '#8a3b12', weight: 1.5, dashArray: '6 5', fill: false }).addTo(capaSel);
@@ -348,7 +365,7 @@ function pintarFicha(u) {
           c.replace('CGCH_GB_', 'GB-').replace('CGCH_', 'Carta ').replace(/_/g, '-')) : c,
         CARTAS[c]?.t ? ` · ${CARTAS[c].t.replace(/^\d{4}\.\s*/, '').slice(0, 80)}` : '', CARTAS[c]?.aprox ? ' (marco aproximado)' : ''))) : 'Solo en la bibliografía'),
       el('dt', {}, 'Ubicación en el mapa'),
-      el('dd', {}, POL[u.id] ? `Polígonos de ${u.gdb} unidad${u.gdb === 1 ? '' : 'es'} de las GDB.` : u.pts.length ? 'Sin polígono: el punto marca la carta que la describe (marco punteado).' : 'Sin ubicación: no hay carta georreferenciada que la describa.'),
+      el('dd', {}, u.gdb && !u.gen ? `${fmt(u.hp.length)} afloramientos en ${u.gdb} unidad${u.gdb === 1 ? '' : 'es'} de las GDB (círculos negros).` : u.pts.length ? 'Sin GDB: el punto marca la carta que la describe (marco punteado).' : 'Sin ubicación: no hay carta georreferenciada que la describa.'),
       contemporaneas.length ? [el('dt', {}, 'Contemporáneas y cercanas (±1,5°)'), el('dd', {}, contemporaneas.map(v => el('div', {}, el('button', { class: 'enlace', onclick: () => elegir(v.id, true) }, v.n), el('span', { class: 'ref' }, ` · ${escMa(v.mx)}–${escMa(v.mn)}`))))] : null),
     el('div', { class: 'fila-btns' },
       u.bb ? el('button', { class: 'btn', onclick: () => mapa.flyToBounds([[u.bb[1], u.bb[0]], [u.bb[3], u.bb[2]]], { padding: [40, 40], maxZoom: 10 }) }, 'Ver en el mapa') : null,
@@ -357,23 +374,16 @@ function pintarFicha(u) {
 }
 
 /* ---------------- ¿qué hay aquí? ---------------- */
-function dentroAnillo(x, y, r) {
-  let d = false;
-  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
-    const [xi, yi] = r[i], [xj, yj] = r[j];
-    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) d = !d;
-  }
-  return d;
-}
 mapa.on('click', ev => {
-  const { lat, lng } = ev.latlng;
-  const enPol = U.filter(u => pasa(u) && POL[u.id] && POL[u.id].some(p => dentroAnillo(lng, lat, p[0]) && !p.slice(1).some(h => dentroAnillo(lng, lat, h))));
+  const { lat, lng } = ev.latlng, p0 = mapa.latLngToContainerPoint(ev.latlng);
+  const cerca = ([x, y]) => p0.distanceTo(mapa.latLngToContainerPoint([y, x])) < 14;
+  const enPol = U.filter(u => pasa(u) && u.gdb && !u.gen && u.hp.some(cerca));
   const cartas = Object.entries(CARTAS).filter(([, c]) => lat >= c.b[0] && lat <= c.b[1] && lng >= c.b[2] && lng <= c.b[3]).map(([k]) => k);
   const enCarta = U.filter(u => pasa(u) && !enPol.includes(u) && u.cartas.some(c => cartas.includes(c)));
   if (!enPol.length && !enCarta.length) return;
   const b = u => el('button', { class: 'enlace', onclick: () => { mapa.closePopup(); elegir(u.id, false); } }, el('i', { style: `display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;background:${colorDe(u)}` }), u.n);
   L.popup({ maxWidth: 300, maxHeight: 280 }).setLatLng(ev.latlng).setContent(el('div', {},
-    enPol.length ? [el('b', {}, 'Aflora aquí'), enPol.map(b)] : null,
+    enPol.length ? [el('b', {}, 'Afloran aquí (GDB)'), enPol.map(b)] : null,
     enCarta.length ? [el('b', {}, `Descritas en ${cartas.length > 1 ? 'las cartas' : 'la carta'} de este lugar`),
       enCarta.slice(0, 40).map(b), enCarta.length > 40 ? el('div', { class: 'ref' }, `y ${enCarta.length - 40} más…`) : null] : null)).openOn(mapa);
 });
@@ -405,6 +415,7 @@ function abrir(p) {
 $$('#pestanas button').forEach(b => b.onclick = () => abrir(b.dataset.p));
 $('#asa').onclick = () => { $('#panel').classList.toggle('min'); document.body.classList.toggle('panel-min'); };
 $$('#color-por button').forEach(b => b.onclick = () => { colorPor = b.dataset.c; $$('#color-por button').forEach(x => x.classList.toggle('on', x === b)); aplicar(false); });
+$$('#modo-calor button').forEach(b => b.onclick = () => { modoCalor = b.dataset.m; $$('#modo-calor button').forEach(x => x.classList.toggle('on', x === b)); aplicar(false); });
 $$('#f-amb button').forEach(b => b.onclick = () => { filtro.amb = b.dataset.a; $$('#f-amb button').forEach(x => x.classList.toggle('on', x === b)); aplicar(); });
 $$('#escala-t button').forEach(b => b.onclick = () => { escalaT = b.dataset.e; $$('#escala-t button').forEach(x => x.classList.toggle('on', x === b)); pintarPerfil(U.filter(pasa)); });
 $('#f-rev').onchange = e => { filtro.rev = e.target.checked; aplicar(); };
@@ -428,9 +439,9 @@ function aplicar(reiniciarLista = true) {
 /* ---------------- arranque ---------------- */
 (async () => {
   const j = n => fetch(n).then(r => r.json());
-  const [du, dp, dc, di] = await Promise.all([j('data/unidades.json'), j('data/poligonos.json'), j('data/cartas.json'), j('data/ics.json')]);
-  U = du.unidades; POL = dp; CARTAS = dc; ICS = armarICS(di.unidades);
-  $('#fecha-datos').textContent = `Datos generados el ${du.generado}: ${fmt(U.length)} unidades, ${fmt(Object.keys(POL).length)} con polígono.`;
+  const [du, dc, di] = await Promise.all([j('data/unidades.json'), j('data/cartas.json'), j('data/ics.json')]);
+  U = du.unidades; CARTAS = dc; ICS = armarICS(di.unidades);
+  $('#fecha-datos').textContent = `Datos generados el ${du.generado}: ${fmt(U.length)} unidades, ${fmt(U.filter(u => u.gdb && !u.gen).length)} con afloramientos en las GDB.`;
   for (const u of U) {
     BYID[u.id] = u;
     u._txt = norm([u.n, u.loc, u.lit, u.corr, u.rocas.join(' '), u.aut, u.sig, u.libro].join(' '));

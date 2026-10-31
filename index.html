@@ -10,7 +10,7 @@
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=3">
+<link rel="stylesheet" href="app.css?v=4">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -41,7 +41,12 @@
   <div id="cuerpo">
     <section id="p-unidades" class="pag on">
       <div class="resumen" id="resumen"></div>
-      <h3>Colorear por</h3>
+      <h3>Mapa de calor</h3>
+      <div class="segm" id="modo-calor">
+        <button data-m="periodo" class="on">Un color por período</button><button data-m="total">Densidad total</button>
+      </div>
+      <p class="nota">Al elegir una edad en la pestaña «Edad» (o con la máquina del tiempo) el calor toma el color de ese intervalo.</p>
+      <h3>Color de los puntos <small>(se ven al acercarse)</small></h3>
       <div class="segm" id="color-por">
         <button data-c="edad" class="on">Edad</button><button data-c="lito">Litología</button><button data-c="tipo">Tipo</button>
       </div>
@@ -53,7 +58,7 @@
       <div class="segm" id="f-amb"><button data-a="" class="on">Todos</button><button data-a="marino">Marino</button><button data-a="continental">Continental</button></div>
       <h3>Más filtros</h3>
       <label class="chk"><input type="checkbox" id="f-rev"> Solo las revisadas a mano</label>
-      <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen polígono (GDB)</label>
+      <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen afloramientos en las GDB</label>
       <label class="chk"><input type="checkbox" id="f-gen"> Incluir depósitos e intrusivos sin nombre propio</label>
       <div class="fila-btns"><button class="btn" id="limpiar">Quitar filtros</button><button class="btn" id="maquina">▶ Máquina del tiempo</button></div>
       <h3 id="lista-titulo">Unidades</h3>
@@ -75,10 +80,11 @@
         bibliografía del corpus.</p>
       <h3>De dónde sale cada cosa</h3>
       <ul>
-        <li><b>Polígonos</b>: unidades de las geodatabases (GDB) oficiales de 93 cartas, simplificados a ~250 m. Una unidad que
-          aparece en varias GDB junta todos sus polígonos.</li>
+        <li><b>Mapa de calor</b>: densidad de afloramientos por edad. Para las unidades que están en las geodatabases (GDB)
+          oficiales de 93 cartas, cada afloramiento es un punto (pesa más si es más grande); las demás aportan un punto por
+          cada carta que las describe.</li>
         <li><b>Puntos</b>: las unidades sin GDB se ubican dentro del marco de cada carta que las describe; el punto indica la carta,
-          no el afloramiento. Al elegir la unidad se dibuja el marco.</li>
+          no el afloramiento. Al elegir la unidad se dibuja el marco de la carta y sus afloramientos.</li>
         <li><b>Edad, litología, localidad tipo y correlaciones</b>: tabla <i>Unidades_geologicas_Chile.xlsx</i>. Las fichas
           marcadas «revisada a mano» se contrastaron con el texto de la carta; las demás vienen de la extracción automática.</li>
         <li><b>Edad numérica</b> (para filtrar y colorear): leída del texto de edad («Mioceno Inferior», «ca. 18,6 Ma») con la Tabla
@@ -91,6 +97,7 @@
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=3"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
