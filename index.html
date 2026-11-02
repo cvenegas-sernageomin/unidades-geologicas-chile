@@ -10,7 +10,7 @@
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=4">
+<link rel="stylesheet" href="app.css?v=5">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -45,7 +45,7 @@
       <div class="segm" id="modo-calor">
         <button data-m="periodo" class="on">Un color por período</button><button data-m="total">Densidad total</button>
       </div>
-      <p class="nota">Al elegir una edad en la pestaña «Edad» (o con la máquina del tiempo) el calor toma el color de ese intervalo.</p>
+      <p class="nota">En la pestaña «Edad» puedes elegir varios pisos, épocas o períodos a la vez: cada uno se dibuja como una capa de calor con su color.</p>
       <h3>Color de los puntos <small>(se ven al acercarse)</small></h3>
       <div class="segm" id="color-por">
         <button data-c="edad" class="on">Edad</button><button data-c="lito">Litología</button><button data-c="tipo">Tipo</button>
@@ -98,6 +98,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

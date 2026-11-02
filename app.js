@@ -36,7 +36,7 @@ const tipoDe = u => u.cat === 'Unidad' ? 'Secuencia' : (TIPOS.some(t => t[0] ===
 const TIPO = Object.fromEntries(TIPOS.map(([k, n, c, s1]) => [k, { n, c, s1 }]));
 
 let U = [], BYID = {}, CARTAS = {}, ICS = null, HOJAS = [], META = {};
-const filtro = { q: '', tipos: new Set(), lito: new Set(), amb: '', int: null, rev: false, pol: false, gen: false };
+const filtro = { q: '', tipos: new Set(), lito: new Set(), amb: '', ints: [], rev: false, pol: false, gen: false };
 let colorPor = 'edad', sel = null, escalaT = 'raiz';
 
 /* ---------------- tabla cronoestratigráfica ---------------- */
@@ -83,7 +83,8 @@ function pasaSinEdad(u) {
   return true;
 }
 const solapa = (u, b, t) => u.mx != null && u.mn < b - 1e-9 && u.mx > t + 1e-9 || (u.mx != null && u.mx === u.mn && u.mx <= b && u.mx >= t);
-const pasa = u => pasaSinEdad(u) && (!filtro.int || solapa(u, filtro.int.base, filtro.int.techo));
+// varias edades elegidas: pasa la unidad que toca cualquiera de ellas
+const pasa = u => pasaSinEdad(u) && (!filtro.ints.length || filtro.ints.some(i => solapa(u, i.base, i.techo)));
 
 /* ---------------- mapa ---------------- */
 const mapa = L.map('mapa', { zoomControl: false, preferCanvas: true, minZoom: 3, worldCopyJump: true }).setView([-33, -70.5], 5);
@@ -131,10 +132,13 @@ function pintarMapa() {
   const pts = u => u.hp.map(([x, y, w]) => [y, x, w]);
   // leaflet.heat revienta con el mapa de ancho 0 (pestaña oculta): se dibuja al tomar tamaño
   if (!mapa.getSize().x) { mapa.once('resize', () => pintarMapa()); }
-  else if (modoCalor === 'total' || filtro.int) {
-    // con una edad elegida, el calor toma el color de ese intervalo
-    const c = filtro.int ? ICS.X.find(x => x.id === filtro.int.id)?.color : null;
+  else if (modoCalor === 'total') {
+    const c = filtro.ints.length === 1 ? filtro.ints[0].color : null;
     capaCalor.addLayer(capaDeCalor(vis.flatMap(pts), c ? rampa(c) : RAMPA_TOTAL));
+  } else if (filtro.ints.length) {
+    // una capa por edad elegida, en su color; las más antiguas abajo. Una unidad que toca dos edades entra en ambas
+    for (const i of [...filtro.ints].sort((a, b) => b.base - a.base))
+      capaCalor.addLayer(capaDeCalor(vis.filter(u => solapa(u, i.base, i.techo)).flatMap(pts), rampa(i.color)));
   } else {
     const grupos = new Map();
     for (const u of vis) { const k = u._icsPer?.id || 'sin'; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(...pts(u)); }
@@ -147,6 +151,7 @@ function pintarMapa() {
 }
 let tz;
 mapa.on('zoomend', () => { clearTimeout(tz); tz = setTimeout(() => U.length && pintarMapa(), 50); });
+const oscuro = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return 0.299 * r + 0.587 * g + 0.114 * b < 140; };
 function shade(hex, f) {
   const n = parseInt(hex.slice(1), 16), ch = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f));
   return '#' + ch.map(v => v.toString(16).padStart(2, '0')).join('');
@@ -155,7 +160,10 @@ function shade(hex, f) {
 /* ---------------- leyenda ---------------- */
 function pintarLeyenda(vis) {
   const caja = $('#leyenda');
-  if (colorPor === 'edad') {
+  if (filtro.ints.length && modoCalor === 'periodo') {
+    poner(caja, el('b', { onclick: plegarLeyenda }, 'Calor por edad elegida'), [...filtro.ints].sort((a, b) => b.base - a.base).map(i =>
+      el('div', {}, el('i', { style: `background:${i.color}` }), `${i.nombre} · ${vis.filter(u => solapa(u, i.base, i.techo)).length}`)));
+  } else if (colorPor === 'edad') {
     const cuenta = new Map();
     for (const u of vis) { const x = u._icsPer; if (x) cuenta.set(x, (cuenta.get(x) || 0) + 1); }
     const per = [...cuenta.keys()].sort((a, b) => a.techo - b.techo);
@@ -169,7 +177,8 @@ function pintarLeyenda(vis) {
 }
 
 function plegarLeyenda() { $('#leyenda').classList.toggle('plegada'); }
-if (matchMedia('(max-width: 760px)').matches) $('#leyenda').classList.add('plegada');
+// en el teléfono parte plegada (ancho 0 = pestaña oculta al cargar: no cuenta como teléfono)
+if (innerWidth > 0 && innerWidth <= 760) $('#leyenda').classList.add('plegada');
 
 /* ---------------- panel: unidades ---------------- */
 function pintarChips() {
@@ -186,8 +195,10 @@ let LIM = 80;
 function pintarLista(vis) {
   const conPol = vis.filter(u => u.gdb && !u.gen).length;
   poner($('#resumen'), el('b', {}, fmt(vis.length)), ` unidades a la vista · ${fmt(conPol)} con afloramientos en las GDB · ${fmt(vis.length - conPol)} ubicadas por carta`,
-    filtro.int ? el('div', {}, 'Edad: ', el('b', { style: 'font-size:1em' }, filtro.int.nombre), ` (${escMa(filtro.int.base)} – ${escMa(filtro.int.techo)}) `,
-      el('button', { class: 'enlace', onclick: () => { filtro.int = null; aplicar(); } }, 'quitar')) : null);
+    filtro.ints.length ? el('div', { class: 'edades-elegidas' }, filtro.ints.length > 1 ? 'Edades: ' : 'Edad: ',
+      filtro.ints.map(i => el('span', { class: 'chip on', style: `background:${i.color};border-color:${shade(i.color, -0.3)};color:${oscuro(i.color) ? '#fff' : '#111'}`,
+        title: `${escMa(i.base)} – ${escMa(i.techo)}` }, i.nombre, el('button', { class: 'quitar', title: 'Quitar', onclick: () => elegirIntervalo(i) }, '✕'))),
+      el('button', { class: 'enlace', onclick: () => { filtro.ints = []; aplicar(); } }, filtro.ints.length > 1 ? 'quitar todas' : 'quitar')) : null);
   const orden = [...vis].sort((a, b) => (b.rev - a.rev) || (b.nf + b.cartas.length * 3) - (a.nf + a.cartas.length * 3));
   $('#lista-titulo').textContent = `Unidades (${fmt(vis.length)})`;
   poner($('#lista'), orden.slice(0, LIM).map(u => el('li', { onclick: () => elegir(u.id, true) },
@@ -200,12 +211,11 @@ function pintarLista(vis) {
 function pintarTiempo() {
   const pasan = U.filter(pasaSinEdad), conEdad = pasan.filter(u => u.mx != null), sin = pasan.length - conEdad.length;
   const cuenta = x => conEdad.reduce((s, u) => s + solapa(u, x.base, x.techo), 0);
-  const elegida = x => filtro.int?.id === x.id;
+  const elegida = x => filtro.ints.some(i => i.id === x.id);
   const filas = [];
   const maxN = Math.max(1, ...ICS.hojas.map(cuenta));
   const celda = (x, hoja) => {
-    const [r, g, b] = [1, 3, 5].map(i => parseInt(x.color.slice(i, i + 2), 16)), oscuro = 0.299 * r + 0.587 * g + 0.114 * b < 140;
-    return el('td', { class: `ics-${x.tipo}` + (hoja ? ' ics-hoja' : '') + (elegida(x) ? ' on' : ''), style: `background:${x.color};color:${oscuro ? '#fff' : '#111'}`,
+    return el('td', { class: `ics-${x.tipo}` + (hoja ? ' ics-hoja' : '') + (elegida(x) ? ' on' : ''), style: `background:${x.color};color:${oscuro(x.color) ? '#fff' : '#111'}`,
       rowspan: x.nh > 1 ? x.nh : null, colspan: hoja && x.nivel < 4 ? 5 - x.nivel : null,
       title: `${x.etiqueta}: ${escMa(x.base)} a ${escMa(x.techo)} · ${fmt(cuenta(x))} unidades`, onclick: () => elegirIntervalo(x) },
     el('span', {}, x.nombre));
@@ -222,9 +232,9 @@ function pintarTiempo() {
   };
   ICS.raices.forEach(r => recorrer(r, []));
   poner($('#p-edad'),
-    el('p', { class: 'nota' }, 'Toca un eón, era, período, época o piso para ver solo las unidades de esa edad. Una unidad cuenta en cada intervalo que toca su rango de edad.'),
+    el('p', { class: 'nota' }, 'Toca uno o varios eones, eras, períodos, épocas o pisos para ver en el mapa solo las unidades de esas edades, cada una con su color; tócalo de nuevo para quitarlo. Una unidad cuenta en cada intervalo que toca su rango de edad.'),
     el('div', { class: 'fila-btns' },
-      el('button', { class: 'btn' + (!filtro.int ? ' primario' : ''), onclick: () => { filtro.int = null; aplicar(); } }, 'Todas las edades'),
+      el('button', { class: 'btn' + (!filtro.ints.length ? ' primario' : ''), onclick: () => { filtro.ints = []; aplicar(); } }, 'Todas las edades'),
       el('button', { class: 'btn', onclick: iniciarMaquina }, '▶ Máquina del tiempo')),
     el('table', { class: 'ics' },
       el('thead', {}, el('tr', {}, ['Eón', 'Era', 'Per.', 'Época', 'Piso', 'Ma', 'N.º'].map(h => el('th', {}, h)))),
@@ -234,7 +244,8 @@ function pintarTiempo() {
     el('p', { class: 'nota' }, el('a', { href: 'https://stratigraphy.org/chart', target: '_blank', rel: 'noopener' }, 'Tabla oficial en stratigraphy.org ↗')));
 }
 function elegirIntervalo(x) {
-  filtro.int = filtro.int?.id === x.id ? null : { id: x.id, nombre: x.etiqueta, base: x.base, techo: x.techo };
+  const ya = filtro.ints.some(i => i.id === x.id);
+  filtro.ints = ya ? filtro.ints.filter(i => i.id !== x.id) : [...filtro.ints, { id: x.id, nombre: x.etiqueta ?? x.nombre, base: x.base, techo: x.techo, color: x.color }];
   aplicar();
 }
 
@@ -249,7 +260,7 @@ function iniciarMaquina() {
   $('#reloj').hidden = false;
   const paso = () => {
     const x = pasos[i];
-    filtro.int = { id: x.id, nombre: x.etiqueta, base: x.base, techo: x.techo };
+    filtro.ints = [{ id: x.id, nombre: x.etiqueta, base: x.base, techo: x.techo, color: x.color }];
     $('#reloj-nombre').textContent = `${x.padre?.padre && x.padre.padre.tipo === 'periodo' ? x.padre.padre.nombre + ' · ' : x.padre?.tipo === 'periodo' ? x.padre.nombre + ' · ' : ''}${x.etiqueta}`;
     $('#reloj-ma').textContent = `${escMa(x.base)} – ${escMa(x.techo)}`;
     $('#reloj').style.borderColor = x.color; $('#reloj').style.boxShadow = `0 0 0 3px ${x.color}, var(--sombra)`;
@@ -263,7 +274,7 @@ function iniciarMaquina() {
 function detenerMaquina(limpiar = true) {
   if (reloj?.t) clearInterval(reloj.t);
   reloj = null; $('#reloj').hidden = true;
-  if (limpiar) { filtro.int = null; aplicar(); }
+  if (limpiar) { filtro.ints = []; aplicar(); }
 }
 $('#reloj-cerrar').onclick = () => detenerMaquina(true);
 $('#reloj-pausa').onclick = () => {
@@ -422,7 +433,7 @@ $('#f-rev').onchange = e => { filtro.rev = e.target.checked; aplicar(); };
 $('#f-pol').onchange = e => { filtro.pol = e.target.checked; aplicar(); };
 $('#f-gen').onchange = e => { filtro.gen = e.target.checked; aplicar(); };
 $('#limpiar').onclick = () => {
-  Object.assign(filtro, { q: '', amb: '', int: null, rev: false, pol: false, gen: false }); filtro.tipos.clear(); filtro.lito.clear();
+  Object.assign(filtro, { q: '', amb: '', ints: [], rev: false, pol: false, gen: false }); filtro.tipos.clear(); filtro.lito.clear();
   q.value = ''; $('#f-rev').checked = $('#f-pol').checked = $('#f-gen').checked = false;
   $$('#f-amb button').forEach(x => x.classList.toggle('on', x.dataset.a === '')); aplicar();
 };
