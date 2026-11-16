@@ -171,3 +171,44 @@ h3 small { text-transform: none; letter-spacing: 0; font-weight: 400 }
 #y-lista li small { display: block; color: var(--texto-2); font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 #pestanas button { font-size: .66rem; padding-left: 0; padding-right: 0 }
 #pestanas button i { font-size: 1.05rem }
+
+/* botón y panel de capas */
+.ctl-capas { display: flex; flex-direction: column; align-items: flex-end; gap: 6px }
+#btn-capas { width: 42px; height: 42px; display: grid; place-items: center; padding: 0; color: var(--texto) }
+#capas { padding: 10px 12px; width: 250px; max-width: calc(100vw - 30px); font-size: .86rem; color: var(--texto) }
+#capas b { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); margin: 8px 0 4px }
+#capas b:first-child { margin-top: 0 }
+#capas .chk { margin: 5px 0; cursor: pointer }
+/* símbolos de los puntos (leyenda y ficha) */
+.sim { display: inline-block; width: 11px !important; height: 11px !important; border-radius: 50% !important; flex: none; vertical-align: -1px; margin-right: 4px }
+.sim.lleno { background: #8a6d4b; border: 1.5px solid #2b2420 !important }
+.sim.medio { background: rgba(138, 109, 75, .4); border: 1.5px solid #2b2420 !important }
+.sim.anillo { background: none; border: 2px solid #8a6d4b !important }
+#leyenda .sep { border-top: 1px solid var(--borde); margin: 5px 0 3px; height: 0 }
+/* edad en la pestaña Unidades */
+.edad-rapida { display: flex; flex-wrap: wrap; gap: 4px }
+.edad-rapida .per { border: 1px solid rgba(0, 0, 0, .3); border-radius: 6px; padding: 4px 7px; font-size: .78rem; display: inline-flex; gap: 5px; align-items: baseline }
+.edad-rapida .per small { font-size: .68rem; opacity: .8 }
+.edad-rapida .per.on { outline: 3px solid #3b1a08; outline-offset: -1px; font-weight: 800 }
+.pleg { border: 1px solid var(--borde); border-radius: 10px; margin-top: 8px; padding: 0 10px }
+.pleg[open] { padding-bottom: 10px }
+.pleg summary { cursor: pointer; padding: 8px 0; font-size: .86rem; font-weight: 600 }
+.pleg summary small { font-weight: 400; color: var(--texto-2) }
+.tabla-scroll { max-height: 46vh; overflow: auto; border-radius: 6px }
+.tabla-scroll .ics th { top: 0 }
+/* unidades fijadas en el mapa */
+.en-mapa { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 6px; margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--acento); border-radius: 10px; font-size: .82rem }
+.en-mapa .rot { font-weight: 700; color: var(--acento) }
+.chip.fijada { padding: 2px 4px 2px 6px; border-width: 2px }
+.chip.fijada i { width: 12px; height: 12px; border-radius: 3px }
+.chip.fijada .enlace { text-decoration: none; color: var(--texto); max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.chip .quitar { border: 0; background: rgba(0, 0, 0, .15); color: inherit; border-radius: 50%; width: 18px; height: 18px; font-size: .65rem; line-height: 18px; padding: 0 }
+#lista li.sel { background: var(--superficie-2); box-shadow: inset 3px 0 0 var(--acento) }
+#lista .fijar { flex: none; border: 1px solid var(--borde); background: var(--superficie); border-radius: 999px; padding: 3px 9px; font-size: .72rem; white-space: nowrap }
+#lista .fijar.on { background: var(--acento); border-color: var(--acento); color: #fff; font-weight: 600 }
+.lt-geo { margin-top: 4px }
+@media (max-width: 760px) {
+  .ctl-capas { margin-top: 58px !important }
+  #capas { max-height: calc(48vh - 130px); overflow: auto }
+  body.panel-min #capas { max-height: calc(100vh - 250px) }
+}

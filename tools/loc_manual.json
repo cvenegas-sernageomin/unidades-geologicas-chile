@@ -1,0 +1,1074 @@
+{
+ "Estratos de San Carlos": {
+  "x": -69.0703,
+  "y": -24.2558,
+  "p": "cercania",
+  "t": "mina Escondida",
+  "f": "yacimiento",
+  "cita": "CGCH_GB_189 p59",
+  "nota": "flanco NO de la sierra de San Carlos, cerca de la mina Escondida; dos rótulos a 1 km"
+ },
+ "Formación la Tabla": {
+  "x": -69.1198,
+  "y": -26.216,
+  "p": "rasgo extenso",
+  "t": "Salar Pedernales (rótulo más cercano a 26°10'S)",
+  "f": "IGM",
+  "cita": "CGCH_62_63 p37",
+  "nota": "parte occidental del salar; texto cita 26°10'S"
+ },
+ "Formación Pabellón": {
+  "x": -70.0161,
+  "y": -27.9559,
+  "p": "rasgo extenso",
+  "t": "río Copiapó (rótulo sur)",
+  "f": "IGM",
+  "cita": "CGCH_GB_150 p16; CGCH_GB_120 p14",
+  "nota": "el texto solo dice valle del río Copiapó"
+ },
+ "Estratos de Agua Amarga": {
+  "x": -70.8984,
+  "y": -27.726,
+  "p": "toponimo",
+  "t": "Quebrada Agua Amarga",
+  "f": "IGM",
+  "cita": "CGCH_GB_76 p20; CGCH_GB_100 p25",
+  "nota": "único rótulo; cae en el sector centro-occidental de las cartas Castilla y Totoral Bajo"
+ },
+ "Formación San Salvador": {
+  "x": -69.2159,
+  "y": -22.4651,
+  "p": "rasgo extenso",
+  "t": "río San Salvador (rótulo medio)",
+  "f": "IGM",
+  "cita": "CGCH_GB_198 p28",
+  "nota": "curso medio; rótulos del río entre -68.97 y -69.51"
+ },
+ "Formación Tambo": {
+  "x": -69.9308,
+  "y": -29.8342,
+  "p": "cercania",
+  "t": "vega Los Tambos",
+  "f": "IGM",
+  "cita": "CGCH_GB_192_193 p79",
+  "nota": "al oeste de la vega, cabeceras río Vacas Heladas"
+ },
+ "Estratos Esmeralda": {
+  "sin": true,
+  "nota": "cerro Rosita no figura en el gazetteer"
+ },
+ "Formación Aeropuerto": {
+  "x": -70.3721,
+  "y": -25.5647,
+  "p": "cercania",
+  "t": "Aeródromo Las Breas",
+  "f": "IGM",
+  "cita": "CGCH_GB_164_165 p26; CGCH_GB_169 p29",
+  "nota": "alrededores del aeródromo Las Breas de Taltal"
+ },
+ "Ignimbrita Huasco": {
+  "x": -68.8474,
+  "y": -20.3003,
+  "p": "cercania",
+  "t": "Salar del Huasco",
+  "f": "IGM",
+  "cita": "CGCH_GB_174 p70",
+  "nota": "al oeste del salar"
+ },
+ "Ignimbrita Tambillo": {
+  "x": -69.0842,
+  "y": -20.2856,
+  "p": "toponimo",
+  "t": "Quebrada Tambillo",
+  "f": "IGM",
+  "cita": "CGCH_GB_148 p16; CGCH_GB_182 p24",
+  "nota": "sección tipo del Miembro Tambillo 25 km al O (GB_148) / 50 km SO (GB_182) del área; rótulo más cercano a esa distancia"
+ },
+ "Ignimbritas Pajonales": {
+  "x": -68.9383,
+  "y": -25.1108,
+  "p": "rasgo extenso",
+  "t": "Pampa Pajonales",
+  "f": "IGM",
+  "cita": "CGCH_GB_202_203 p32",
+  "nota": "continuación sur de la pampa San Eulogio"
+ },
+ "Formación Tambillo": {
+  "sin": true,
+  "nota": "entre quebradas Tilpa y Tambillo: la quebrada Tambillo de esa zona no tiene rótulo propio y Tilpa tiene 8 rótulos"
+ },
+ "Estratos de Confluencia": {
+  "sin": true,
+  "nota": "el texto solo dice vertiente occidental de la Precordillera (Carta María Elena)"
+ },
+ "Estratos de San Pedro": {
+  "sin": true,
+  "nota": "el texto solo dice área de Osorno-Llanquihue"
+ },
+ "Formación Malleco": {
+  "x": -71.9929,
+  "y": -38.1691,
+  "p": "rasgo extenso",
+  "t": "río Malleco (rótulo medio del curso en la Hoja Curacautín)",
+  "f": "IGM",
+  "cita": "CGCH_GB_115 p16; CGCH_71 p52",
+  "nota": "área tipo = curso del río Malleco en la Hoja Curacautín"
+ },
+ "Formación Agua Dulce": {
+  "x": -68.8387,
+  "y": -23.0375,
+  "p": "rasgo extenso",
+  "t": "Sierra Agua Dulce",
+  "f": "IGM",
+  "cita": "CGCH_54 p21",
+  "nota": "parte noroccidental del área de CGCH_54"
+ },
+ "Formación Llanta": {
+  "x": -69.8317,
+  "y": -26.3322,
+  "p": "toponimo",
+  "t": "Estación Llanta",
+  "f": "IGM",
+  "cita": "CGCH_GB_121 p19",
+  "nota": "localidad de Llanta, al SO de El Salvador (rótulo El Salvador -69.63,-26.24)"
+ },
+ "Formación Cerro Bayo": {
+  "x": -70.4246,
+  "y": -28.8005,
+  "p": "toponimo",
+  "t": "Cerro Bayos de la Junta",
+  "f": "IGM",
+  "cita": "CGCH_GB_192_193 p19",
+  "nota": "río El Tránsito al pie del cerro; rótulo del río Tránsito a 5 km"
+ },
+ "Formación Quiriquina": {
+  "x": -73.0581,
+  "y": -36.6084,
+  "p": "toponimo",
+  "t": "Ensenada Las Tablas (Bahía Las Tablas), isla Quiriquina",
+  "f": "IGM",
+  "cita": "CGCH_GB_222 p33",
+  "nota": "el RAG da Bahía Las Tablas como localidad tipo; loc dice Bahía de Los Saurios (sin rótulo)"
+ },
+ "Formación el Batea": {
+  "sin": true,
+  "nota": "cerro El Batea no figura en el gazetteer"
+ },
+ "Formación el Diablo": {
+  "x": -69.9848,
+  "y": -18.5212,
+  "p": "toponimo",
+  "t": "Quebrada Diablo",
+  "f": "IGM",
+  "cita": "CGCH_GB_197 p40; CGCH_35 p16",
+  "nota": "2,5 km al S del extremo SO de la Carta Putre (-70.0,-18.5); coincide con el rótulo"
+ },
+ "Formación Quillagua": {
+  "x": -69.5311,
+  "y": -21.6554,
+  "p": "cercania",
+  "t": "Quillagua (aldea)",
+  "f": "IGM",
+  "cita": "CGCH_GB_141_142 p22",
+  "nota": "cerca de la aldea; el texto cita 21°30'S pero el rótulo está a 21°39'S"
+ },
+ "Complejo Santo Domingo": {
+  "sin": true,
+  "nota": "el texto del CORPUS describe la Fm. Santo Domingo de Hungerbühler (sur de Ecuador), no una unidad chilena"
+ },
+ "Formación Río Grande": {
+  "sin": true,
+  "nota": "el texto del libro no nombra el lugar de definición"
+ },
+ "Formación Bandurrias": {
+  "sin": true,
+  "nota": "el texto solo dice Región de Copiapó; las cartas citan la localidad tipo sin nombrarla"
+ },
+ "Unidad Infiernillo": {
+  "x": -70.2463,
+  "y": -29.9923,
+  "p": "rasgo extenso",
+  "t": "río Ingaguás (rótulo a 29°59'S)",
+  "f": "IGM",
+  "cita": "CGCH_GB_175_176 p77",
+  "nota": "Prospecto Infiernillo en el río Ingaguás (30°S); el prospecto no está en el gazetteer y hay 4 rótulos Infiernillo en la zona"
+ },
+ "Ignimbrita Los Colorados": {
+  "sin": true,
+  "nota": "el texto solo dice área de la carta"
+ },
+ "Complejo.epimetamórfico Chañaral": {
+  "x": -70.6435,
+  "y": -26.8174,
+  "p": "cercania",
+  "t": "Sierra Peña Blanca",
+  "f": "IGM",
+  "cita": "CGCH_GB_100 p11; CGCH_GB_164_165 p10",
+  "nota": "RAG: localidad tipo = sector de Peña Blanca; loc dice sector de Chañaral (rótulo Chañaral -70.62,-26.35, a 50 km)"
+ },
+ "Dioritas del Cretácico Superior": {
+  "sin": true,
+  "nota": "el texto habla de la Fm. Cura-Mallín, no de esta unidad"
+ },
+ "Formación la Escondida": {
+  "sin": true,
+  "nota": "el texto solo dice Cordillera de Vallenar (28°30'S)"
+ },
+ "Formación Las Chilcas": {
+  "x": -70.8443,
+  "y": -32.8645,
+  "p": "cercania",
+  "t": "Chilcas (poblado)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_118 p11; CGCH_GB_220 p12",
+  "nota": "área de Las Chilcas, región de Valparaíso; hay otro grupo de rótulos Chilcas (cerros) en -71.05,-33.09; se elige el poblado"
+ },
+ "Formación Nantoco": {
+  "x": -70.2688,
+  "y": -27.4831,
+  "p": "toponimo+desplazamiento",
+  "t": "Nantoco (poblado) + 6 km al N",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_120 p11",
+  "nota": "~6 km al norte del pueblo de Nantoco"
+ },
+ "Formación Loreto": {
+  "sin": true,
+  "nota": "el texto cita tres valles (Los Ciervos, Lynch, Las Minas) sin distinguir la localidad tipo"
+ },
+ "Monzodiorita Pedregoso": {
+  "sin": true,
+  "nota": "el texto habla de la Fm. Ibáñez, no de esta unidad"
+ },
+ "Estratos de Agua Salada": {
+  "sin": true,
+  "nota": "el texto solo dice área costera de la hoja La Serena"
+ },
+ "Formacion Tordillo": {
+  "sin": true,
+  "nota": "localidad tipo en Argentina"
+ },
+ "Formación Cola de Zorro": {
+  "sin": true,
+  "nota": "cajón Cola de Zorro no figura en el gazetteer"
+ },
+ "Formación Cura-Mallín": {
+  "x": -71.3038,
+  "y": -37.6087,
+  "p": "toponimo",
+  "t": "Río Infiernillo o Curamallín",
+  "f": "IGM",
+  "cita": "CGCH_GB_220 p19",
+  "nota": "RAG: localidad tipo al sur de la laguna de la Laja, en el estero homónimo (González y Vergara 1962)"
+ },
+ "Formación Doña Ana": {
+  "x": -70.1334,
+  "y": -29.8216,
+  "p": "rasgo extenso",
+  "t": "Cordillera Doña Ana",
+  "f": "IGM",
+  "cita": "CGCH_GB_175_176 p75",
+  "nota": "al sur del área de GB_175_176 (borde sur -29.5)"
+ },
+ "Grupo Chañarcillo": {
+  "sin": true,
+  "nota": "los pasajes citan la localidad tipo sin nombrarla"
+ },
+ "diorita Campanario": {
+  "sin": true,
+  "nota": "el texto es de Argentina (Formación Campanario, cerro homónimo), otra unidad"
+ },
+ "Formación Azapa": {
+  "x": -69.8049,
+  "y": -18.5875,
+  "p": "toponimo",
+  "t": "Ausipar (quebrada Azapa)",
+  "f": "IGM",
+  "cita": "CGCH_GB_84 p48",
+  "nota": "quebrada Azapa, Ausipar; rótulo quebrada Azapa a 7 km"
+ },
+ "Formación Moctezuma": {
+  "x": -68.883,
+  "y": -22.5324,
+  "p": "cercania",
+  "t": "Pampa Moctezuma",
+  "f": "IGM",
+  "cita": "CGCH_GB_199 p41",
+  "nota": "al sur de la pampa, 13 km al SE de Calama"
+ },
+ "Ignimbrita Sifón": {
+  "x": -68.3461,
+  "y": -22.2921,
+  "p": "toponimo",
+  "t": "Sifón",
+  "f": "IGM",
+  "cita": "CGCH_GB_117 p27; CGCH_GB_215_216 p60",
+  "nota": "El Sifón de Aiquina (rótulo Aiquina a 3 km)"
+ },
+ "Complejo Metamórfico Bahía Mansa": {
+  "sin": true,
+  "nota": "el texto solo dice al sur del área de la carta"
+ },
+ "Estratos El Mono": {
+  "sin": true,
+  "nota": "el texto solo da 27°S, Altos Andes"
+ },
+ "Formación Oxaya": {
+  "x": -69.661,
+  "y": -18.4799,
+  "p": "rasgo extenso",
+  "t": "Pampa Oxaya",
+  "f": "IGM",
+  "cita": "CGCH_GB_197 p29",
+  "nota": "pampa Oxaya"
+ },
+ "Formación Sierra Fraga": {
+  "x": -69.7957,
+  "y": -27.0459,
+  "p": "rasgo extenso",
+  "t": "Sierra Fraga",
+  "f": "IGM",
+  "cita": "CGCH_GB_102 p10; CGCH_GB_119 p19",
+  "nota": "flanco occidental de la sierra"
+ },
+ "Formación Totoralillo": {
+  "x": -70.0161,
+  "y": -27.9559,
+  "p": "rasgo extenso",
+  "t": "río Copiapó (rótulo sur)",
+  "f": "IGM",
+  "cita": "CGCH_GB_120 p13",
+  "nota": "el texto solo dice valle del río Copiapó"
+ },
+ "Formación Cerritos Bayos": {
+  "x": -69.151,
+  "y": -22.6577,
+  "p": "cercania",
+  "t": "Cerritos Bayos",
+  "f": "IGM",
+  "cita": "CGCH_GB_198 p27",
+  "nota": "sector de Cerritos Bayos; RAG GB_199 dice sección tipo al SO de la carta Calama"
+ },
+ "Formación Hornitos": {
+  "sin": true,
+  "nota": "el texto solo dice zona de Copiapó; no nombra el lugar exacto"
+ },
+ "Formación Quebrada Paipote": {
+  "x": -69.7755,
+  "y": -27.1206,
+  "p": "rasgo extenso",
+  "t": "Quebrada Paipote (rótulo dentro de CGCH_53)",
+  "f": "IGM",
+  "cita": "CGCH_53 p29",
+  "nota": "Hoja Laguna del Negro Francisco; la quebrada tiene ~15 rótulos"
+ },
+ "Grupo Peine": {
+  "x": -68.0667,
+  "y": -23.6844,
+  "p": "cercania",
+  "t": "Peine",
+  "f": "IGM",
+  "cita": "CGCH_GB_131 p9",
+  "nota": "sector de Peine, salar de Atacama"
+ },
+ "Formación Chacarilla": {
+  "x": -69.1028,
+  "y": -20.6384,
+  "p": "toponimo",
+  "t": "Chacarilla",
+  "f": "IGM",
+  "cita": "CGCH_GB_207 p58",
+  "nota": "~40 km al N del extremo NO de CGCH_GB_207 (-69.0,-21.0): calza con el rótulo; no hay rótulo de quebrada"
+ },
+ "Formación Asientos": {
+  "sin": true,
+  "nota": "el gazetteer solo trae «Asiento» (2 rótulos equidistantes de Potrerillos), no «Asientos»"
+ },
+ "Formación Blanco": {
+  "x": -70.141,
+  "y": -19.3942,
+  "p": "rasgo extenso",
+  "t": "Pampa Tana (único rótulo dentro de CGCH_GB_146)",
+  "f": "IGM",
+  "cita": "CGCH_GB_146 p24",
+  "nota": "al oeste del vértice Blanco, pampa de Tana; el vértice no figura en el gazetteer"
+ },
+ "Formación Chala": {
+  "sin": true,
+  "nota": "localidad tipo en Perú (15°52'S)"
+ },
+ "Formación Tuina": {
+  "x": -68.4373,
+  "y": -22.581,
+  "p": "cercania",
+  "t": "Morro Inca (Morro del Inca)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_215_216 p15",
+  "nota": "alrededores del cerro Morro del Inca, ~8 km al sur del área de CGCH_GB_215_216 (borde sur -22.5)"
+ },
+ "Ignimbrita Río Salado": {
+  "x": -68.2242,
+  "y": -22.2759,
+  "p": "rasgo extenso",
+  "t": "río Salado (rótulo de las nacientes; cerros de Tucle no figuran)",
+  "f": "IGM",
+  "cita": "CGCH_GB_215_216 p59",
+  "nota": "nacientes del río Salado"
+ },
+ "Gravas de Atacama": {
+  "sin": true,
+  "nota": "el texto habla de la Fm. Pampas de Mula, otra unidad"
+ },
+ "Formación Colimapu": {
+  "sin": true,
+  "nota": "el texto solo da 34°S"
+ },
+ "Formación Lasana": {
+  "x": -68.6255,
+  "y": -22.2676,
+  "p": "toponimo",
+  "t": "Lasana (poblado)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_117 p17",
+  "nota": "dos secciones tipo: quebrada Yalqui (inferior) y poblado de Lasana (superior); se usa la del poblado"
+ },
+ "Formación Tonel": {
+  "x": -68.4547,
+  "y": -22.8809,
+  "p": "toponimo",
+  "t": "Cerro Tonel",
+  "f": "IGM",
+  "cita": "CGCH_GB_143 p15",
+  "nota": "cerros de Tonel, al sur de la cuesta Barros Arana (-68.43,-22.71)"
+ },
+ "Secuencia Santa Isabel": {
+  "sin": true,
+  "nota": "el texto solo dice área de la carta"
+ },
+ "Formacion Mostazal": {
+  "sin": true,
+  "nota": "el texto solo dice Hoja Pisco Elqui"
+ },
+ "Formación Canto del Agua": {
+  "x": -70.9759,
+  "y": -28.2626,
+  "p": "cercania",
+  "t": "Mina Plomiza",
+  "f": "IGM",
+  "cita": "Andean Geology V47n2 p12 (texto asignado a Diorita Canto del Agua en unidades.json)",
+  "nota": "localidad tipo «cerca de la mina Plomiza»; el loc de la propia unidad solo dice ~50 km al N de otra carta"
+ },
+ "Formación Horqueta": {
+  "sin": true,
+  "nota": "localidad tipo «entre la cuesta El Melón y Limache»: dos lugares, sin punto único"
+ },
+ "Ignimbrita Puripicar": {
+  "sin": true,
+  "nota": "el texto solo dice norte de Chile"
+ },
+ "Estratos de Rencoret": {
+  "sin": true,
+  "nota": "el texto solo dice Carta Baquedano"
+ },
+ "Formación Loma Amarilla": {
+  "sin": true,
+  "nota": "el único rótulo Loma Amarilla (-24.40) está al sur del área de GB_144, el texto lo sitúa al norte"
+ },
+ "Formación Yalqui": {
+  "x": -68.4973,
+  "y": -22.3432,
+  "p": "toponimo",
+  "t": "Quebrada Yalqui (rótulo dentro del sector SO de CGCH_GB_215_216)",
+  "f": "IGM",
+  "cita": "CGCH_GB_215_216 p39; CGCH_GB_117 p13",
+  "nota": "la quebrada tiene varios rótulos; se elige el del sector SO del área"
+ },
+ "Monzodiorita El Bolsón": {
+  "sin": true,
+  "nota": "el texto es de Argentina (Grupo El Bolsón), otra unidad"
+ },
+ "Monzogranito Piuquenes": {
+  "x": -70.139,
+  "y": -29.9176,
+  "p": "toponimo",
+  "t": "Quebrada Piuquenes",
+  "f": "IGM",
+  "cita": "CGCH_GB_192_193 p31",
+  "nota": "RAG GB_211_212 dice río Turbio 6 km al norte; se sigue el texto de la carta, que nombra la quebrada"
+ },
+ "Formación Farellones": {
+  "x": -70.2436,
+  "y": -32.8155,
+  "p": "toponimo",
+  "t": "Cerro La Gloria",
+  "f": "IGM",
+  "cita": "CGCH_69 p78",
+  "nota": "al noreste de la confluencia de los ríos Aconcagua y Colorado (-70.43,-32.86); homónimos lejanos descartados"
+ },
+ "Complejo Metamórfico del Choapa": {
+  "sin": true,
+  "nota": "el texto solo dice Hoja Illapel"
+ },
+ "Ignimbritas Tocomar": {
+  "x": -68.7746,
+  "y": -24.7605,
+  "p": "rasgo extenso",
+  "t": "Quebrada Tocomar (rótulo medio)",
+  "f": "IGM",
+  "cita": "CGCH_GB_202_203 p27",
+  "nota": "la quebrada tiene 5 rótulos"
+ },
+ "Formación Pampa de Mulas": {
+  "sin": true,
+  "nota": "localidad tipo «entre la Sierra Argomedo y la Sierra de Varas»: dos rasgos, sin punto único"
+ },
+ "Ignimbrita Chara": {
+  "sin": true,
+  "nota": "«Pampa Carcanal de Chara» no figura en el gazetteer"
+ },
+ "Formación Collahuasi": {
+  "x": -68.6857,
+  "y": -20.9754,
+  "p": "cercania",
+  "t": "Collaguasi (poblado; grafía IGM)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_199 p15",
+  "nota": "área tipo en Collahuasi, precordillera del Loa superior"
+ },
+ "Formación Curanilahue": {
+  "sin": true,
+  "nota": "el texto solo dice Cuenca de Arauco"
+ },
+ "Ignimbritas Río Frío": {
+  "x": -69.1033,
+  "y": -25.109,
+  "p": "rasgo extenso",
+  "t": "Río Frío (rótulo dentro de CGCH_GB_159)",
+  "f": "IGM",
+  "cita": "CGCH_GB_129 p32",
+  "nota": "cañón del río Frío en la Carta Vaquillas Altas; el río tiene 7 rótulos"
+ },
+ "Diorita Canto del Agua": {
+  "sin": true,
+  "nota": "el texto describe la Formación Canto del Agua, otra unidad"
+ },
+ "Estratos de Quebrada la Totora": {
+  "sin": true,
+  "nota": "el texto solo dice área Condoriaco-Rivadavia"
+ },
+ "Formación Montandón": {
+  "sin": true,
+  "nota": "«quebrada Asientos» no figura en el gazetteer (solo «Asiento»)"
+ },
+ "Estratos de La Paloma": {
+  "x": -69.9546,
+  "y": -29.9681,
+  "p": "cercania",
+  "t": "Paloma (sector La Paloma)",
+  "f": "IGM",
+  "cita": "CGCH_GB_192_193 p67",
+  "nota": "sector La Paloma, cabecera del río Seco (rótulo a 4 km); el texto cita también la confluencia La Laguna-Del Toro, 12 km al O"
+ },
+ "Estratos de Pupunahue": {
+  "x": -72.9049,
+  "y": -39.8042,
+  "p": "cercania",
+  "t": "Pupunahue (poblado)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_106 p11",
+  "nota": "sector de Pupunahue; 4 rótulos en 5 km"
+ },
+ "Estratos de Condoriri": {
+  "x": -69.3632,
+  "y": -18.3752,
+  "p": "cercania",
+  "t": "Misitune (poblado)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_194 p28",
+  "nota": "sector de Misitune"
+ },
+ "Estratos de los Maitenes": {
+  "sin": true,
+  "nota": "localidad «entre el estero Unihue y Romeral»: dos lugares, sin punto único"
+ },
+ "Formación Quebrada Ancha": {
+  "sin": true,
+  "nota": "«Quebrada Ancha» no figura en el gazetteer"
+ },
+ "Secuencia Guanaco Sonso": {
+  "x": -69.948,
+  "y": -29.4195,
+  "p": "cercania",
+  "t": "Arroyo Guanaco Sonso (por el paso homónimo)",
+  "f": "IGM",
+  "cita": "CGCH_GB_149 p17",
+  "nota": "al oeste del Paso Guanaco Sonso; el paso no figura, el arroyo homónimo es el único rótulo"
+ },
+ "Formación Colbún": {
+  "x": -71.3252,
+  "y": -35.678,
+  "p": "cercania",
+  "t": "Embalse Colbún",
+  "f": "IGM",
+  "cita": "CGCH_GB_220 p24, p11",
+  "nota": "área de los proyectos Colbún-Machicura-Melado; la localidad tipo está dentro de CGCH_GB_220"
+ },
+ "Formación El Campamento": {
+  "sin": true,
+  "nota": "cerro Catedral no figura en el gazetteer"
+ },
+ "Formación Huentelauquén": {
+  "sin": true,
+  "nota": "el texto solo da 31°40'S"
+ },
+ "Formación Rio Damas": {
+  "x": -70.3968,
+  "y": -34.9492,
+  "p": "toponimo",
+  "t": "Río Damas",
+  "f": "IGM",
+  "cita": "Cap. 3 Charrier et al. p38; Charrier JSAES 1996 p8",
+  "nota": "río de las Damas junto a Termas del Flaco (-70.43,-34.96), 35°S"
+ },
+ "Complejo Metamórfico Andino Oriental": {
+  "sin": true,
+  "nota": "región extensa entre 46°S y 49°S, sin localidad"
+ },
+ "Estratos de Cucao": {
+  "x": -74.1055,
+  "y": -42.6403,
+  "p": "cercania",
+  "t": "Cucao",
+  "f": "IGM",
+  "cita": "CGCH_GB_86 p13",
+  "nota": "costa desde Cucao hacia el sur"
+ },
+ "Formación Copaquire": {
+  "x": -68.9201,
+  "y": -20.9448,
+  "p": "toponimo+desplazamiento",
+  "t": "mina Copaquire + 3 km al O",
+  "f": "yacimiento",
+  "cita": "CGCH_GB_174 p25",
+  "nota": "3 km al O del caserío Copaquire; el rótulo es una mina (no hay caserío); ~50 km SSE de la carta Mamiña concuerda"
+ },
+ "Formación La Cascada": {
+  "x": -72.1751,
+  "y": -43.1849,
+  "p": "toponimo+desplazamiento",
+  "t": "Futaleufú (poblado) + 25 km al O",
+  "f": "GeoNames",
+  "cita": "Resumenes XII CGC 2012 p659",
+  "nota": "localidad tipo a 25 km al oeste de Futaleufú"
+ },
+ "Estratos de Hilaricos": {
+  "x": -69.5,
+  "y": -21.4333,
+  "p": "cercania",
+  "t": "Hilaricos (poblado)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_195_196 p53",
+  "nota": "área de los sondajes Soledad e Hilaricos, río Loa"
+ },
+ "Estratos de Pitreño": {
+  "x": -72.4849,
+  "y": -40.3271,
+  "p": "cercania",
+  "t": "Lago Ranco (rótulo del borde sur)",
+  "f": "IGM",
+  "cita": "CGCH_GB_210 p17",
+  "nota": "sur y suroeste del lago Ranco"
+ },
+ "Formación Agua Fresca": {
+  "x": -71.0067,
+  "y": -53.4057,
+  "p": "rasgo extenso",
+  "t": "Río Agua Fresca",
+  "f": "IGM",
+  "cita": "V40n3-a08 p3",
+  "nota": "río Agua Fresca, sur de Chile; único rótulo río en el sur"
+ },
+ "Formación las Yeguas": {
+  "sin": true,
+  "nota": "río Manflas no figura en el gazetteer"
+ },
+ "Ignimbrita Caletones": {
+  "sin": true,
+  "nota": "corrida de Cori no figura en el gazetteer"
+ },
+ "Formación Santa Cruz": {
+  "sin": true,
+  "nota": "localidad tipo en Patagonia argentina"
+ },
+ "Formación Cerro Empexa": {
+  "x": -68.9677,
+  "y": -20.6897,
+  "p": "cercania",
+  "t": "Cerro Higuerita (por «Sinclinal de Higueritas»)",
+  "f": "IGM",
+  "cita": "CGCH_GB_182 p14",
+  "nota": "~80 km al sur de la carta Pampa Lirima-Cancosa (borde sur -20.0); grafía IGM singular"
+ },
+ "Formación Vilama": {
+  "x": -68.3547,
+  "y": -23.0433,
+  "p": "rasgo extenso",
+  "t": "Cordillera de la Sal (rótulo de la mitad norte)",
+  "f": "IGM",
+  "cita": "CGCH_54 p8",
+  "nota": "mitad norte de la cordillera de la Sal"
+ },
+ "Formación Guanaco Sonso": {
+  "x": -69.948,
+  "y": -29.4195,
+  "p": "cercania",
+  "t": "Arroyo Guanaco Sonso (cabecera del río Potrerillos)",
+  "f": "IGM",
+  "cita": "CGCH_GB_181 p17",
+  "nota": "localidad tipo informal en la cabecera del río Potrerillos, paso Guanaco Sonso; rótulo del río a 4 km"
+ },
+ "Formación Latagualla": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Complejo Metamórfico el Tránsito": {
+  "sin": true,
+  "nota": "el texto solo dice Cuadrángulo El Tránsito"
+ },
+ "Pluton Cerro Moradito": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Formación Longacho": {
+  "x": -69.347,
+  "y": -20.3801,
+  "p": "toponimo",
+  "t": "Cerro Longacho",
+  "f": "IGM",
+  "cita": "CGCH_GB_174 p22",
+  "nota": "cerro Longacho, SO de la Carta Mamiña; 2 rótulos coincidentes (IGM y GeoNames)"
+ },
+ "Formación Quebrada Pajonales": {
+  "x": -68.7598,
+  "y": -24.2899,
+  "p": "rasgo extenso",
+  "t": "Quebrada Pajonales (rótulo central dentro de CGCH_GB_191)",
+  "f": "IGM",
+  "cita": "CGCH_GB_191 p41",
+  "nota": "la quebrada tiene ~6 rótulos dentro de la carta"
+ },
+ "Ignimbrita Tatio": {
+  "sin": true,
+  "nota": "quebrada Challahuita no figura; el texto solo dice sector oriental de la carta"
+ },
+ "Formación Cerro del Árbol": {
+  "x": -69.5239,
+  "y": -24.1874,
+  "p": "cercania",
+  "t": "Cerro El Árbol",
+  "f": "IGM",
+  "cita": "CGCH_70 p24; CGCH_GB_105 p9",
+  "nota": "al norte del cerro El Árbol, cerca del límite norte de la hoja CGCH_70 (-24.0)"
+ },
+ "Complejo Plutónico Guanta": {
+  "x": -70.3878,
+  "y": -29.8473,
+  "p": "toponimo",
+  "t": "Guanta (poblado)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_192_193 p22",
+  "nota": "localidad de Guanta, río Turbio"
+ },
+ "Estratos de Quebrada Blanca de Poquis": {
+  "sin": true,
+  "nota": "«Quebrada Blanca de Poquis» no figura; solo existe «Quebrada Poquis», otra quebrada"
+ },
+ "Estratos León Muerto": {
+  "sin": true,
+  "nota": "el texto solo dice inmediatamente al NE de la carta"
+ },
+ "Formación Estero Cenicero": {
+  "sin": true,
+  "nota": "el texto solo dice Cuadrángulo Paso Río Negro"
+ },
+ "Dioritas de Quebrada Pinte": {
+  "x": -70.4246,
+  "y": -28.8005,
+  "p": "toponimo",
+  "t": "Cerro Bayos de la Junta",
+  "f": "IGM",
+  "cita": "CGCH_GB_149 p13",
+  "nota": "ladera norte del río Tránsito a los pies del cerro Bayos de la Junta, entre quebrada El Tabaco y Punta Negra"
+ },
+ "Grupo Caracoles": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Ignimbrita Carcote": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Sienogranitos del Jurásico Superior": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Formación Lo Valle": {
+  "x": -70.8443,
+  "y": -32.8645,
+  "p": "cercania",
+  "t": "Chilcas (poblado), zona de Las Chilcas",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_220 p12",
+  "nota": "localidad tipo en la zona de Las Chilcas, región de Valparaíso (RAG de la carta GB_220)"
+ },
+ "Formación Quehuita": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Intrusivos del Paleoceno": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Gabro Bandurrias": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Granodioritas de Pampa": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Grupo Quemado": {
+  "sin": true,
+  "nota": "localidad tipo en Argentina (Estancia El Quemado, Lago Argentino)"
+ },
+ "Pórfidos del Cretácico Inferior": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Complejo Ancud": {
+  "sin": true,
+  "nota": "la frase del RAG es de otra unidad que engrana con el Complejo Volcánico Ancud"
+ },
+ "Formación Veta Negra": {
+  "sin": true,
+  "nota": "la frase del RAG habla de la Formación Lo Valle"
+ },
+ "Grupo Doña Ana": {
+  "sin": true,
+  "nota": "el texto del libro es regional (28°45'-30°30'S) y no nombra lugar"
+ },
+ "Grupo Ibañez": {
+  "sin": true,
+  "nota": "el texto solo dice área de la carta GB_124"
+ },
+ "Formación Matahuaico": {
+  "x": -70.68385,
+  "y": -30.00296,
+  "p": "toponimo+desplazamiento",
+  "t": "Diaguitas (rótulo) + 8 km al SO",
+  "f": "IGM",
+  "cita": "CGCH_28 p11",
+  "nota": "sección tipo en la ladera oriental de la quebrada Matahuaico, 8 km al SO de Diaguitas, Cuadrángulo Vicuña; la quebrada no figura en el gazetteer"
+ },
+ "Granito Pan de Azúcar": {
+  "sin": true,
+  "nota": "el texto es de la Formación Pan de Azúcar, otra unidad"
+ },
+ "Estratos de Quepe": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Intrusivos del Cretácico": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Formación Escabroso": {
+  "sin": true,
+  "nota": "sin texto de localidad; el RAG habla del Miembro Escabroso sin lugar"
+ },
+ "Formación Tilito": {
+  "sin": true,
+  "nota": "la frase del RAG habla de otra unidad (Fm. Tambo)"
+ },
+ "Formación Tobas": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Formación Arrayán": {
+  "sin": true,
+  "nota": "la frase del RAG habla de la Fm. El Quereo"
+ },
+ "Grupo Pastos Blancos": {
+  "sin": true,
+  "nota": "la localidad tipo (Thiele 1964) no se nombra"
+ },
+ "Formacion Huantajaya": {
+  "sin": true,
+  "nota": "Thomas (1970) no definió sección tipo"
+ },
+ "Tonalita de Biotita": {
+  "sin": true,
+  "nota": "el texto habla de otras cartas, sin localidad"
+ },
+ "Formación Cholita": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Formación Cristo Redentor": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Miembro Punta Blanca": {
+  "x": -70.53473,
+  "y": -29.99938,
+  "p": "toponimo+desplazamiento",
+  "t": "Rivadavia (poblado) + 3,5 km al SE",
+  "f": "GeoNames",
+  "cita": "CGCH_55 p33",
+  "nota": "localidad tipo en la ladera SO del cordón Punta Blanca, 3,5 km al SE de Rivadavia; el cordón no figura en el gazetteer"
+ },
+ "Complejo Intrusivo Elena": {
+  "x": -68.8948,
+  "y": -22.2972,
+  "p": "cercania",
+  "t": "Mina Chuquicamata",
+  "f": "yacimiento",
+  "cita": "CGCH_GB_199 p32",
+  "nota": "distrito Chuquicamata (Granodiorita Elena)"
+ },
+ "Complejo Volcánico Condoriri": {
+  "sin": true,
+  "nota": "el texto solo dice norte de la carta GB_101"
+ },
+ "Depósitos de Limos": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Complejo Plutónico Sierra de Moreno": {
+  "sin": true,
+  "nota": "Sierra de Moreno no figura en el gazetteer"
+ },
+ "Estratos de Cerros de Puquios": {
+  "x": -68.5562,
+  "y": -24.2345,
+  "p": "rasgo extenso",
+  "t": "Sierra Almeida (rótulo central dentro de CGCH_GB_191)",
+  "f": "IGM",
+  "cita": "CGCH_GB_191 p29",
+  "nota": "afloramientos discontinuos en la sierra Almeida"
+ },
+ "Formación Llanura Colorada": {
+  "sin": true,
+  "nota": "la localidad de Llanura Colorada no figura en el gazetteer"
+ },
+ "Depósitos sedimentarios": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Miembro Lolén-Pacunto": {
+  "x": -71.3001,
+  "y": -38.5269,
+  "p": "rasgo extenso",
+  "t": "río Paule (cabecera)",
+  "f": "IGM",
+  "cita": "CGCH_71 p21",
+  "nota": "RAG: localidad tipo de las secciones inferior y media en la cabecera del río Paule (la superior, en el estero Cajón Chico, sin rótulo)"
+ },
+ "Complejo Metamórfico Sierra de Moreno": {
+  "sin": true,
+  "nota": "Sierra de Moreno no figura en el gazetteer"
+ },
+ "Granito Cerros del Vetado": {
+  "sin": true,
+  "nota": "sin texto de localidad"
+ },
+ "Complejo Plutónico Cifuncho": {
+  "sin": true,
+  "nota": "el texto solo dice Cordillera de la Costa al sur de 25°30'S"
+ },
+ "Complejo Metamórfico Cordillera de Nahuelbuta": {
+  "sin": true,
+  "nota": "el texto solo dice Cordillera de Nahuelbuta, región extensa"
+ },
+ "Complejo Plutónico Piuquenes": {
+  "x": -70.1339,
+  "y": -29.9625,
+  "p": "rasgo extenso",
+  "t": "Río Turbio (rótulo a 29°58'S)",
+  "f": "IGM",
+  "cita": "CGCH_GB_211_212 p49",
+  "nota": "río Turbio, 6 km al N del área (borde norte -30.0)"
+ },
+ "Complejo Volcanico Ancud": {
+  "x": -73.8162,
+  "y": -41.8707,
+  "p": "cercania",
+  "t": "Ancud (poblado)",
+  "f": "GeoNames",
+  "cita": "CGCH_GB_79 p14",
+  "nota": "área de Ancud"
+ },
+ "Domos del Paleoceno Inferior": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Formación Quehuita (Jqrn, Jqc)": {
+  "sin": true,
+  "nota": "sin texto de localidad"
+ },
+ "Granito Los Chinches": {
+  "sin": true,
+  "nota": "sin texto de localidad; el RAG habla de la Fm. Chinches"
+ },
+ "Ignimbritas Chaichayén": {
+  "sin": true,
+  "nota": "el puente Chaichayén no figura en el gazetteer"
+ },
+ "Intrusivo Hipabisal del Cretácico Inferior": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Intrusivo Hipabisal del Paleoceno": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "Miembro Cocambico": {
+  "sin": true,
+  "nota": "el texto no nombra la localidad tipo"
+ },
+ "Volcán La Laguna": {
+  "sin": true,
+  "nota": "sin texto de localidad; la frase del RAG es de otra unidad"
+ },
+ "diorita del Complejo Monzodiorítico-Monzonítico": {
+  "sin": true,
+  "nota": "el texto describe un cuerpo mineral (localidad tipo de minerales), no la unidad"
+ },
+ "Formación San Pedro": {
+  "x": -68.33904,
+  "y": -22.77797,
+  "p": "toponimo",
+  "t": "Quebrada de Tambores",
+  "f": "IGM",
+  "cita": "CGCH_54 p33; CGCH_GB_143 p24",
+  "nota": "quebrada de Tambores y cordillera de la Sal, cerca de San Pedro de Atacama (a ~20 km del poblado); confirma el punto del geocodificador"
+ },
+ "Formación Augusta Victoria": {
+  "x": -69.37515,
+  "y": -24.11123,
+  "p": "toponimo",
+  "t": "Estación Augusta Victoria",
+  "f": "IGM",
+  "cita": "CGCH_GB_129 p17; CGCH_70 p97",
+  "nota": "inmediaciones de la estación Augusta Victoria; confirma el punto del geocodificador (queda lejos de los polígonos GDB, que son de otras cartas)"
+ },
+ "Formación el Calvario": {
+  "x": -70.4985,
+  "y": -29.612,
+  "p": "toponimo",
+  "t": "Quebrada Chacha (afluente de la quebrada El Calvario)",
+  "f": "IGM",
+  "cita": "CGCH_GB_192_193 p58",
+  "nota": "estratotipo en la quebrada Chacha, afluente de la quebrada El Calvario (rótulos de ambas contiguos, a 4 km); hay otra cadena de rótulos «Calvario» en -70.18,-29.9 sin Chacha"
+ }
+}

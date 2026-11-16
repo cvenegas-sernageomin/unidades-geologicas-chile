@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Unidades Geológicas de Chile</title>
-<meta name="description" content="Visor de las formaciones, complejos, intrusivos y volcanes de Chile: dónde afloran, de qué rocas son, qué edad tienen y con qué se correlacionan.">
+<meta name="description" content="Visor de las formaciones, complejos, intrusivos y volcanes de Chile: dónde se definieron, dónde afloran, de qué rocas son, qué edad tienen y con qué se correlacionan.">
 <meta name="theme-color" content="#3b2f2a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="app.css?v=8">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -33,7 +33,6 @@
   <button id="asa" aria-label="Mostrar u ocultar el panel"><span></span></button>
   <nav id="pestanas" role="tablist">
     <button role="tab" data-p="unidades" class="on"><i>🪨</i>Unidades</button>
-    <button role="tab" data-p="edad"><i>⏳</i>Edad</button>
     <button role="tab" data-p="yac"><i>⛏️</i>Yacimientos</button>
     <button role="tab" data-p="perfil"><i>📈</i>Tiempo–latitud</button>
     <button role="tab" data-p="ficha"><i>📄</i>Ficha</button>
@@ -42,34 +41,38 @@
   <div id="cuerpo">
     <section id="p-unidades" class="pag on">
       <div class="resumen" id="resumen"></div>
-      <h3>Mapa de calor</h3>
-      <div class="segm" id="modo-calor">
-        <button data-m="periodo" class="on">Un color por período</button><button data-m="total">Densidad total</button>
-      </div>
-      <p class="nota">En la pestaña «Edad» puedes elegir varios pisos, épocas o períodos a la vez: cada uno se dibuja como una capa de calor con su color.</p>
-      <h3>Color de los puntos <small>(se ven al acercarse)</small></h3>
+      <div id="en-mapa" class="en-mapa" hidden></div>
+      <h3>Edad <small>(toca uno o varios períodos)</small></h3>
+      <div id="edad-rapida" class="edad-rapida"></div>
+      <div id="edad-elegidas" class="edades-elegidas" hidden></div>
+      <details id="d-edad" class="pleg">
+        <summary>Tabla cronoestratigráfica completa <small>(series y pisos)</small></summary>
+        <div id="tabla-edad"></div>
+      </details>
+      <details id="d-filtros" class="pleg">
+        <summary>Tipo, litología y más filtros<small id="n-filtros"></small></summary>
+        <h3>Tipo de unidad</h3>
+        <div class="chips" id="f-tipo"></div>
+        <h3>Litología <small>(cualquiera de las elegidas)</small></h3>
+        <div class="chips" id="f-lito"></div>
+        <h3>Ambiente de depósito <small>(inferido del texto litológico)</small></h3>
+        <div class="segm" id="f-amb"><button data-a="" class="on">Todos</button><button data-a="marino">Marino</button><button data-a="continental">Continental</button></div>
+        <h3>Más filtros</h3>
+        <label class="chk"><input type="checkbox" id="f-rev"> Solo las revisadas a mano</label>
+        <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen polígonos en las GDB</label>
+        <label class="chk"><input type="checkbox" id="f-gen"> Incluir depósitos e intrusivos sin nombre propio</label>
+      </details>
+      <h3>Color de los símbolos</h3>
       <div class="segm" id="color-por">
         <button data-c="edad" class="on">Edad</button><button data-c="lito">Litología</button><button data-c="tipo">Tipo</button>
       </div>
-      <h3>Tipo de unidad</h3>
-      <div class="chips" id="f-tipo"></div>
-      <h3>Litología <small>(cualquiera de las elegidas)</small></h3>
-      <div class="chips" id="f-lito"></div>
-      <h3>Ambiente</h3>
-      <div class="segm" id="f-amb"><button data-a="" class="on">Todos</button><button data-a="marino">Marino</button><button data-a="continental">Continental</button></div>
-      <h3>Más filtros</h3>
-      <label class="chk"><input type="checkbox" id="f-rev"> Solo las revisadas a mano</label>
-      <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen afloramientos en las GDB</label>
-      <label class="chk"><input type="checkbox" id="f-gen"> Incluir depósitos e intrusivos sin nombre propio</label>
       <div class="fila-btns"><button class="btn" id="limpiar">Quitar filtros</button><button class="btn" id="maquina">▶ Máquina del tiempo</button></div>
       <h3 id="lista-titulo">Unidades</h3>
       <ol id="lista"></ol>
     </section>
-    <section id="p-edad" class="pag"></section>
     <section id="p-yac" class="pag">
       <div class="resumen" id="y-resumen"></div>
       <label class="chk"><input type="checkbox" id="y-on" checked> Mostrar los yacimientos en el mapa</label>
-      <label class="chk"><input type="checkbox" id="y-ocultarcalor"> Ocultar el mapa de calor de las unidades</label>
       <p class="nota" id="y-leyenda-nota">Un punto por yacimiento: tipo, edad del depósito y roca de caja. Toca un punto para ver su ficha; la roca de caja se enlaza con la unidad del visor.</p>
       <h3>Color de los puntos</h3>
       <div class="segm" id="y-color"><button data-c="tipo" class="on">Tipo</button><button data-c="edad">Edad</button></div>
@@ -85,16 +88,16 @@
       <h3>Más filtros</h3>
       <label class="chk"><input type="checkbox" id="y-soloedad" checked> Solo con registro de edad del depósito</label>
       <label class="chk"><input type="checkbox" id="y-solocaja"> Solo con roca de caja registrada</label>
-      <label class="chk"><input type="checkbox" id="y-usaredades" checked> Usar las edades elegidas en la pestaña «Edad»</label>
+      <label class="chk"><input type="checkbox" id="y-usaredades" checked> Usar las edades elegidas en la pestaña «Unidades»</label>
       <div class="fila-btns"><button class="btn" id="y-limpiar">Quitar filtros</button></div>
       <p class="nota" id="y-fecha"></p>
       <h3 id="y-lista-titulo">Yacimientos</h3>
       <ol id="y-lista"></ol>
     </section>
     <section id="p-perfil" class="pag">
-      <p class="nota">Cada barra es una unidad: va de su edad más antigua a la más joven, a la latitud donde aflora. Así se ve cómo
-        el magmatismo y la sedimentación se movieron en el tiempo (por ejemplo, la migración del arco hacia el este desde el Jurásico).
-        Respeta los filtros; toca una barra para ver la ficha.</p>
+      <p class="nota">Cada barra es una unidad: va de su edad más antigua a la más joven, a la latitud de un punto representativo
+        (dentro de sus polígonos o en la carta que la describe). Así se ve cómo se distribuyen el magmatismo y la sedimentación de norte
+        a sur en el tiempo; el diagrama no muestra desplazamientos este–oeste. Respeta los filtros; toca una barra para ver la ficha.</p>
       <div class="segm" id="escala-t"><button data-e="raiz" class="on">Escala de raíz cuadrada</button><button data-e="lin">Lineal</button></div>
       <div id="perfil"></div>
     </section>
@@ -106,11 +109,20 @@
         bibliografía del corpus.</p>
       <h3>De dónde sale cada cosa</h3>
       <ul>
-        <li><b>Mapa de calor</b>: densidad de afloramientos por edad. Para las unidades que están en las geodatabases (GDB)
-          oficiales de 93 cartas, cada afloramiento es un punto (pesa más si es más grande); las demás aportan un punto por
-          cada carta que las describe.</li>
-        <li><b>Puntos</b>: las unidades sin GDB se ubican dentro del marco de cada carta que las describe; el punto indica la carta,
-          no el afloramiento. Al elegir la unidad se dibuja el marco de la carta y sus afloramientos.</li>
+        <li><b>Localidad tipo</b> (punto lleno): el lugar donde está la sección tipo (o el área tipo, en intrusivos y complejos) con
+          que se definió la unidad; en las unidades informales, el lugar de referencia que da la carta. Sale del texto de las cartas y de
+          <i>The Geology of Chile</i>. El texto nombra un topónimo («quebrada Tocomar», «cerro Oyarbide») y aquí se ubica con la
+          toponimia 1:50.000 del Instituto Geográfico Militar, buscando dentro de las cartas que describen la unidad. La ficha dice
+          qué topónimo se usó y con qué precisión: el punto es la posición del topónimo (una quebrada o un cerro miden kilómetros),
+          no la sección tipo misma. El punto semilleno es solo una referencia cercana (un poblado, un río, el lugar
+          que da nombre a la unidad).</li>
+        <li><b>Anillo</b>: unidades cuya localidad tipo no se pudo ubicar. Es un punto indicativo dentro de sus polígonos o de la
+          carta que la describe; no es la localidad tipo.</li>
+        <li><b>Polígonos</b>: unidades cartografiadas en las geodatabases (GDB) de 93 cartas, para las unidades que tú elijas
+          (botón «＋ mapa» en la lista, o al abrir su ficha). Con todo el país a la vista se dibujan generalizados (polígonos
+          vecinos unidos; no se conservan rasgos menores de ~1 km); al acercarse, generalizados a ~250 m. No reemplazan los
+          contactos de la carta ni sirven para medir superficies. Se colorean por edad, litología o tipo: las GDB no traen el
+          color de la leyenda de cada carta.</li>
         <li><b>Edad, litología, localidad tipo y correlaciones</b>: tabla <i>Unidades_geologicas_Chile.xlsx</i>. Las fichas
           marcadas «revisada a mano» se contrastaron con el texto de la carta; las demás vienen de la extracción automática.</li>
         <li><b>Edad numérica</b> (para filtrar y colorear): leída del texto de edad («Mioceno Inferior», «ca. 18,6 Ma») con la Tabla
@@ -135,8 +147,7 @@
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-<script src="app.js?v=7"></script>
-<script src="yac.js?v=6"></script>
+<script src="app.js?v=8"></script>
+<script src="yac.js?v=8"></script>
 </body>
 </html>

@@ -5,7 +5,10 @@ Entrada:
   - geochile-vectores/cartas/*.json: polígonos de las GDB oficiales (93 cartas) -> geometría real de cada unidad.
   - cartas-geologicas-sernageomin/manifest.json + BOUNDS_MANUAL: marco de cada carta, para ubicar las unidades
     que no tienen polígono (punto dentro del marco de cada carta que la describe).
-Salida (data/): unidades.json, poligonos.json, cartas.json.
+  - data/localidades_tipo.json (tools/geocodificar_localidades.py): localidad tipo georreferenciada -> campo «lt».
+Salida (data/): unidades.json, pol_cerca.json (polígonos a ~250 m), pol_lejos.json (suavizados para la vista país),
+cartas.json. El geocodificador lee unidades.json y pol_cerca.json: si cambia la tabla, correr armar_datos.py,
+geocodificar_localidades.py y armar_datos.py otra vez.
 
 Uso: python tools/armar_datos.py
 """
@@ -26,6 +29,8 @@ from agregar import clave_es  # noqa: E402
 
 TOL = 0.0025          # simplificación de polígonos (grados, ~250 m)
 AREA_MIN = 4e-6       # descarta astillas (< ~0,05 km²)
+# vista país: se funden los parches vecinos (cierre morfológico), se simplifica a ~1 km y se botan los menores de ~1 km²
+CIERRE_LEJOS, TOL_LEJOS, AREA_MIN_LEJOS = 0.006, 0.01, 1e-4
 
 # Marcos leídos del texto de cada carta antigua (s, n, w, e). «Costa» y «frontera» van aproximados.
 BOUNDS_MANUAL = {
@@ -303,6 +308,24 @@ def simplificar(geoms):
     return salida
 
 
+def suavizar_lejos(geoms):
+    """Versión generalizada para ver de lejos: parches fundidos y contornos suaves. Nunca deja a la unidad sin nada."""
+    g0 = unary_union(geoms)
+    g = g0.buffer(CIERRE_LEJOS, resolution=3).buffer(-CIERRE_LEJOS, resolution=3).simplify(TOL_LEJOS, preserve_topology=True)
+    partes = [x for x in ([g] if isinstance(g, Polygon) else list(getattr(g, "geoms", []))) if isinstance(x, Polygon) and not x.is_empty]
+    grandes = [x for x in partes if x.area >= AREA_MIN_LEJOS]
+    if not grandes and partes:
+        grandes = [max(partes, key=lambda x: x.area)]
+    if not grandes:  # todo se perdió al cerrar: un octógono alrededor del afloramiento mayor
+        mayor = max(([g0] if isinstance(g0, Polygon) else list(g0.geoms)), key=lambda x: x.area)
+        grandes = [mayor.centroid.buffer(CIERRE_LEJOS, resolution=2)]
+    salida = []
+    for x in grandes:
+        anillos = [x.exterior] + [r for r in x.interiors if Polygon(r).area > AREA_MIN_LEJOS * 2]
+        salida.append([[[round(a, 3), round(b, 3)] for a, b in r.coords] for r in anillos])
+    return salida
+
+
 # ---------------------------------------------------------------- unidades
 # nombres sin topónimo («Depósitos aluviales», «Intrusivos hipabisales»): no son una unidad con extensión propia
 PALABRAS_GENERICAS = set("""depositos deposito intrusivos intrusivo rocas gravas secuencias secuencia sedimentos aluviales aluvial
@@ -339,7 +362,9 @@ def main():
     cartas = cargar_cartas()
     gdb_clave, gdb_codigo = cargar_gdb()
     wb = load_workbook(XLSX, read_only=True)
-    U, POL, usadas = [], {}, set()
+    U, POL, POL_L, usadas = [], {}, {}, set()
+    ltf = os.path.join(RAIZ, "data", "localidades_tipo.json")
+    LT = json.load(open(ltf, encoding="utf-8")) if os.path.exists(ltf) else {}
     sin_marco = collections.Counter()
     for ws in wb.worksheets:
         hoja = next((v for k, v in HOJAS.items() if k.startswith(ws.title) or ws.title.startswith(k)), None)
@@ -382,11 +407,13 @@ def main():
                 if mx and mn:
                     rango, fuente_edad = (max(mx), min(mn)), "gdb"
             gen = generica(nombre)
-            pol = simplificar([p for x in regs for p in x["g"]]) if regs and not gen else []
+            geoms_u = [p for x in regs for p in x["g"]] if regs and not gen else []
+            pol = simplificar(geoms_u) if geoms_u else []
             for x in regs:
                 usadas.add((x["carta"], x["c"]))
             if pol:
                 POL[uid] = pol
+                POL_L[uid] = suavizar_lejos(geoms_u)
             pts = []
             for i, ci in enumerate(cids):
                 if ci in cartas:
@@ -404,14 +431,7 @@ def main():
                         max(cartas[c]["b"][3] for c in cids if c in cartas), max(cartas[c]["b"][1] for c in cids if c in cartas)]
             else:
                 centro, caja = None, None
-            # puntos para el mapa de calor: un punto por afloramiento (parte del polígono) con peso según su área,
-            # o el punto de cada carta si no hay polígono
-            if pol:
-                partes = sorted((Polygon(a[0], a[1:]) for a in pol), key=lambda p: -p.area)[:80]
-                hp = [[round(p.representative_point().x, 3), round(p.representative_point().y, 3),
-                       round(min(1.0, max(0.2, math.log10(1 + p.area * 1.2e4) / 2)), 2)] for p in partes]
-            else:
-                hp = [[x, y, 0.6] for x, y in pts]
+            lt = LT.get(nombre)
             u = {
                 "id": uid, "c": centro, "bb": caja, "n": nombre, "h": hoja, "cat": g("Categoría"), "rev": 1 if rev else 0,
                 "loc": g("Localidad tipo (revisada)") or g("Localidad tipo / definición (mejor dato disponible)"),
@@ -423,7 +443,9 @@ def main():
                 "cl": clases_unidad(nombre, g("Categoría"), g("Litología (revisada)"), rocas,
                                     g("Resumen litológico (texto de la carta)"), lc_gdb),
                 "amb": [a for a, rx in AMBIENTES if re.search(rx, lit + " " + g("Resumen litológico (texto de la carta)"), re.I)],
-                "pts": pts, "hp": hp, "gdb": len(regs), "gen": 1 if gen else 0,
+                "pts": pts, "gdb": len(regs), "gen": 1 if gen else 0, "pol": 1 if pol else 0, "na": len(pol),
+                **({"lt": {"x": lt["x"], "y": lt["y"], "p": lt["p"], "t": lt.get("t", ""), "f": lt.get("f", ""),
+                           **({"cita": lt["cita"]} if lt.get("cita") else {})}} if lt and not gen else {}),
             }
             U.append(u)
     # enlaces de correlación: nombres de otras unidades citados en el texto de correlaciones
@@ -449,7 +471,8 @@ def main():
     os.makedirs(os.path.join(RAIZ, "data"), exist_ok=True)
     dump = lambda o, n: json.dump(o, open(os.path.join(RAIZ, "data", n), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     dump({"generado": __import__("datetime").date.today().isoformat(), "unidades": U}, "unidades.json")
-    dump(POL, "poligonos.json")
+    dump(POL, "pol_cerca.json")
+    dump(POL_L, "pol_lejos.json")
     dump(C, "cartas.json")
     n_pol = sum(1 for u in U if u["id"] in POL)
     n_edad = sum(1 for u in U if u["mx"] is not None)
@@ -457,7 +480,13 @@ def main():
           f"sin ubicación {sum(1 for u in U if not u['pts'] and u['id'] not in POL)} | con edad {n_edad} "
           f"({collections.Counter(u['fe'] for u in U)}) | genéricas {sum(u['gen'] for u in U)} | con enlaces {sum(1 for u in U if u['enl'])}")
     print("cartas sin marco:", sin_marco.most_common(15))
-    for n in ("unidades.json", "poligonos.json", "cartas.json"):
+    print("con localidad tipo georreferenciada:", sum(1 for u in U if u.get("lt")),
+          collections.Counter(u["lt"]["p"] for u in U if u.get("lt")).most_common())
+    assert set(POL) == set(POL_L), "una unidad con polígono quedó sin versión de lejos"
+    area = lambda P: sum(Polygon(a[0], a[1:]).area for v in P.values() for a in v)
+    print("partes cerca/lejos:", sum(len(v) for v in POL.values()), sum(len(v) for v in POL_L.values()),
+          "| área lejos/cerca: %.2f" % (area(POL_L) / area(POL)))
+    for n in ("unidades.json", "pol_cerca.json", "pol_lejos.json", "cartas.json"):
         print(n, round(os.path.getsize(os.path.join(RAIZ, "data", n)) / 1e6, 2), "MB")
 
 

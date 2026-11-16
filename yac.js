@@ -135,8 +135,7 @@ function yacimientosCerca(ev) {
 }
 
 /* ---------------- controles ---------------- */
-$('#y-on').onchange = e => { yac.on = e.target.checked; yac.on ? capaYac.addTo(mapa) : capaYac.remove(); };
-$('#y-ocultarcalor').onchange = e => { e.target.checked ? capaCalor.remove() : capaCalor.addTo(mapa); };
+$('#y-on').onchange = e => { yac.on = e.target.checked; yac.on ? capaYac.addTo(mapa) : capaYac.remove(); if (typeof pintarPanelCapas === 'function') pintarPanelCapas(); };
 $('#y-soloedad').onchange = e => { yac.soloEdad = e.target.checked; yac.lim = 60; pintarYac(); };
 $('#y-solocaja').onchange = e => { yac.soloCaja = e.target.checked; yac.lim = 60; pintarYac(); };
 $('#y-usaredades').onchange = e => { yac.usarEdades = e.target.checked; yac.lim = 60; pintarYac(); };

@@ -1,9 +1,9 @@
 // Service worker de Unidades Geológicas de Chile. Solo toca cachés con prefijo "unidades-".
-const VER = 'unidades-shell-7';
-const SHELL = ['./', 'index.html', 'app.js?v=7', 'app.css?v=7', 'yac.js?v=6', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
-  'data/unidades.json', 'data/yacimientos.json', 'data/cartas.json', 'data/ics.json',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js'];
+const VER = 'unidades-shell-8';
+const SHELL = ['./', 'index.html', 'app.js?v=8', 'app.css?v=8', 'yac.js?v=8', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
+  'data/unidades.json', 'data/yacimientos.json', 'data/cartas.json', 'data/ics.json', 'data/pol_lejos.json',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
+// data/pol_cerca.json (4 MB) NO va en la instalación: se guarda la primera vez que se pide (regla de /data/ más abajo)
 const TESELAS = 'unidades-teselas';
 
 self.addEventListener('install', e => e.waitUntil(caches.open(VER).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));

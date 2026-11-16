@@ -1,4 +1,4 @@
-/* Unidades geológicas de Chile · visor: polígonos de las GDB y puntos por carta, filtros por tipo, litología, ambiente y
+/* Unidades geológicas de Chile · visor: localidades tipo, polígonos de las GDB de las unidades elegidas, filtros por tipo, litología, ambiente y
    edad (tabla cronoestratigráfica como en Fósiles de Chile), máquina del tiempo, diagrama tiempo–latitud y fichas con
    enlaces de correlación. Datos: data/*.json, generados por tools/armar_datos.py desde la tabla revisada. */
 'use strict';
@@ -14,7 +14,7 @@ function el(tag, attrs, ...hijos) {
   for (const h of hijos.flat(Infinity)) if (h != null && h !== false) e.append(h.nodeType ? h : document.createTextNode(h));
   return e;
 }
-const poner = (dest, ...h) => { dest.replaceChildren(); for (const x of h.flat()) if (x) dest.append(x); };
+const poner = (dest, ...h) => { dest.replaceChildren(); for (const x of h.flat(Infinity)) if (x) dest.append(x); };
 const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const fmt = n => n.toLocaleString('es-CL');
 const ma = x => x == null ? '¿?' : x >= 100 ? fmt(Math.round(x)) : x >= 1 ? fmt(+x.toFixed(1)) : x >= 0.0117 ? fmt(+x.toFixed(3)) : `${fmt(Math.round(x * 1000))} ka`.replace(' ka', '') + ' ka';
@@ -75,7 +75,7 @@ function colorDe(u) {
 function pasaSinEdad(u) {
   if (!filtro.gen && u.gen) return false;
   if (filtro.rev && !u.rev) return false;
-  if (filtro.pol && !(u.gdb && !u.gen)) return false;
+  if (filtro.pol && !u.pol) return false;
   if (filtro.tipos.size && !filtro.tipos.has(tipoDe(u))) return false;
   if (filtro.lito.size && !u.cl.some(c => filtro.lito.has(c))) return false;
   if (filtro.amb && !u.amb.includes(filtro.amb)) return false;
@@ -87,70 +87,168 @@ const solapa = (u, b, t) => u.mx != null && u.mn < b - 1e-9 && u.mx > t + 1e-9 |
 const pasa = u => pasaSinEdad(u) && (!filtro.ints.length || filtro.ints.some(i => solapa(u, i.base, i.techo)));
 
 /* ---------------- mapa ---------------- */
+const guardado = { leer(k, d) { try { const v = localStorage.getItem('unidades-' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  poner(k, v) { try { localStorage.setItem('unidades-' + k, JSON.stringify(v)); } catch { /* sin almacenamiento: no pasa nada */ } } };
 const mapa = L.map('mapa', { zoomControl: false, preferCanvas: true, minZoom: 3, worldCopyJump: true }).setView([-33, -70.5], 5);
 L.control.zoom({ position: 'bottomright' }).addTo(mapa);
 const BASES = {
-  'Relieve (OpenTopoMap)': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 16, attribution: '© OpenStreetMap, SRTM · OpenTopoMap (CC-BY-SA)' }),
   'Gris claro (Esri)': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: '© Esri, HERE, Garmin, © OpenStreetMap' }),
+  'Relieve (OpenTopoMap)': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 16, attribution: '© OpenStreetMap, SRTM · OpenTopoMap (CC-BY-SA)' }),
   'Satélite (Esri)': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Imágenes © Esri' }),
 };
-BASES['Gris claro (Esri)'].addTo(mapa);
+let baseActual = guardado.leer('base', 'Gris claro (Esri)');
+if (!BASES[baseActual]) baseActual = 'Gris claro (Esri)';
+BASES[baseActual].addTo(mapa);
+// los polígonos van debajo de los puntos
+mapa.createPane('polP'); mapa.getPane('polP').style.zIndex = 390;
+const rendPol = L.canvas({ pane: 'polP', padding: 0.3 });
 const rend = L.canvas({ padding: 0.3, tolerance: 4 });
-const capaCalor = L.layerGroup().addTo(mapa), capaPts = L.layerGroup(), capaSel = L.layerGroup().addTo(mapa);
-const capaEnl = L.layerGroup().addTo(mapa);
-const layersControl = L.control.layers(BASES, { 'Mapa de calor': capaCalor, 'Puntos de las unidades': capaPts }, { position: 'bottomright' }).addTo(mapa);
-// los puntos se encienden solos al acercarse (con todo el país a la vista solo tapan el calor)
-const ZOOM_PUNTOS = 8;
-mapa.on('zoomend', () => { if (mapa.getZoom() >= ZOOM_PUNTOS) capaPts.addTo(mapa); else capaPts.remove(); });
-let modoCalor = 'periodo';  // 'periodo': una capa de calor por período con su color ICS · 'total': densidad de todo lo filtrado
-const MARCAS = {};  // id -> circleMarkers
+const capaPol = L.layerGroup(), capaLT = L.layerGroup(), capaAprox = L.layerGroup(), capaSel = L.layerGroup(), capaEnl = L.layerGroup();
+const capaRes = L.layerGroup().addTo(mapa);  // anillo de la unidad abierta: siempre visible
 
+/* ---- capas: un solo botón para prender y apagar todo (reemplaza a L.control.layers) ---- */
+const CAPAS = [];
+const estadoCapas = guardado.leer('capas', {});
+function registrarCapa(id, nombre, capa, nota, apagada) {
+  const c = { id, nombre, capa, nota };
+  CAPAS.push(c);
+  if (estadoCapas[id] ?? !apagada) capa.addTo(mapa);
+  pintarPanelCapas();
+  return c;
+}
+function alternarCapa(c, on) {
+  on ? c.capa.addTo(mapa) : c.capa.remove();
+  estadoCapas[c.id] = on; guardado.poner('capas', estadoCapas);
+  mapa.fire(on ? 'overlayadd' : 'overlayremove', { layer: c.capa });
+}
+// yac.js registra su capa con la interfaz de L.control.layers
+const layersControl = { addOverlay(capa, nombre) {
+  const c = registrarCapa('yac', nombre, capa, 'Puntos de la pestaña «Yacimientos»');
+  // si quedó apagada la vez anterior: avisar cuando yac.js ya esté escuchando
+  if (estadoCapas.yac === false) setTimeout(() => mapa.fire('overlayremove', { layer: c.capa }), 0);
+} };
+const cajaCapas = el('div', { id: 'capas', class: 'tarjeta', hidden: true });
+function pintarPanelCapas() {
+  poner(cajaCapas,
+    el('b', {}, 'Capas del mapa'),
+    CAPAS.map(c => el('label', { class: 'chk', title: c.nota || null },
+      el('input', { type: 'checkbox', checked: mapa.hasLayer(c.capa) ? true : null, onchange: e => alternarCapa(c, e.target.checked) }), c.nombre)),
+    el('b', {}, 'Mapa base'),
+    Object.keys(BASES).map(n => el('label', { class: 'chk' },
+      el('input', { type: 'radio', name: 'base', checked: n === baseActual ? true : null, onchange: () => { BASES[baseActual].remove(); baseActual = n; BASES[n].addTo(mapa); guardado.poner('base', n); } }), n)));
+}
+const ControlCapas = L.Control.extend({ options: { position: 'topright' }, onAdd() {
+  const caja = el('div', { class: 'ctl-capas' },
+    el('button', { id: 'btn-capas', class: 'tarjeta', title: 'Capas del mapa', 'aria-label': 'Capas del mapa',
+      onclick: () => { pintarPanelCapas(); cajaCapas.hidden = !cajaCapas.hidden; },
+      html: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3 2.5 8 12 13l9.5-5L12 3Z"/><path d="m2.5 12 9.5 5 9.5-5"/><path d="m2.5 16 9.5 5 9.5-5"/></svg>' }),
+    cajaCapas);
+  L.DomEvent.disableClickPropagation(caja); L.DomEvent.disableScrollPropagation(caja);
+  return caja;
+} });
+mapa.addControl(new ControlCapas());
+registrarCapa('lt', 'Localidades tipo', capaLT, 'Punto lleno: localidad tipo según el texto de la carta; semilleno: referencia cercana');
+// apagada al partir: son ~900 anillos que tapan las localidades tipo; siguen en la lista y, al abrir una, se marca en el mapa
+registrarCapa('aprox', 'Unidades sin localidad tipo ubicada', capaAprox, 'Anillo: punto indicativo en sus polígonos o en la carta que la describe; no es la localidad tipo', true);
+registrarCapa('pol', 'Polígonos de las unidades elegidas', capaPol, 'Unidades cartografiadas en las GDB de las cartas (polígonos generalizados)');
+registrarCapa('enl', 'Líneas de correlación', capaEnl, 'Une la unidad abierta con las que el texto correlaciona');
+registrarCapa('marcos', 'Marcos de las cartas', capaSel, 'Cartas que describen la unidad abierta');
+
+/* ---- puntos: localidad tipo (lleno), referencia cercana (semilleno) o ubicación aproximada (anillo) ---- */
+const EXACTAS = new Set(['exacta', 'toponimo', 'toponimo+desplazamiento', 'a mano']);
+const PREC_TXT = {
+  exacta: 'coordenadas dadas en el texto', toponimo: 'topónimo nombrado en el texto; el punto es la posición del topónimo, no la sección tipo',
+  'toponimo+desplazamiento': 'topónimo más la distancia y la dirección que da el texto',
+  cercania: 'lugar de referencia cercano, no el sitio exacto', 'rasgo extenso': 'rasgo extenso (río, valle, sierra): punto indicativo',
+  'nombre de la unidad': 'lugar del que la unidad toma su nombre; el texto no precisa el sitio',
+};
+const claseLT = u => !u.lt ? 'aprox' : EXACTAS.has(u.lt.p) ? 'lt' : 'ref';
+const MARCAS = {};  // id -> circleMarkers
 function construirCapas() {
   for (const u of U) {
-    MARCAS[u.id] = (u.gdb && !u.gen ? (u.c ? [u.c] : []) : u.pts).map(([x, y]) => {
-      const m = L.circleMarker([y, x], { renderer: rend, radius: 4, weight: 0.8, color: '#2b2420', fillOpacity: 0.85 });
+    const k = claseLT(u);
+    const ptos = u.lt ? [[u.lt.x, u.lt.y]] : u.pol ? (u.c ? [u.c] : []) : u.pts;
+    MARCAS[u.id] = ptos.map(([x, y]) => {
+      const m = L.circleMarker([y, x], { renderer: rend, radius: k === 'aprox' ? 4 : 5.5, weight: k === 'aprox' ? 1.6 : 1.1 });
       m.on('click', ev => { L.DomEvent.stop(ev); elegir(u.id, false); });
-      m.bindTooltip(u.n, { className: 'etiqueta-u' });
+      m.bindTooltip(`${u.n} · ${k === 'lt' ? 'localidad tipo' : k === 'ref' ? 'referencia cercana a la localidad tipo (aproximada)' : 'sin localidad tipo ubicada (punto indicativo)'}`, { className: 'etiqueta-u' });
       return m;
     });
   }
 }
-
-// leaflet.heat redibuja también al cambiar el tamaño del mapa: con ancho 0 (panel oculto) getImageData revienta
-const _redibujar = L.HeatLayer.prototype._redraw;
-L.HeatLayer.prototype._redraw = function () { if (this._canvas && this._canvas.width && this._canvas.height) _redibujar.call(this); else this._frame = null; };
-// rampa de una capa: claro -> color del período -> oscuro (la transparencia la pone la densidad)
-const rampa = c => ({ 0.25: shade(c, 0.55), 0.6: c, 1: shade(c, -0.45) });
-const RAMPA_TOTAL = { 0.2: '#fde68a', 0.45: '#f59e0b', 0.7: '#dc2626', 1: '#5b0a0a' };
-function capaDeCalor(puntos, gradiente) {
-  const z = mapa.getZoom();
-  return L.heatLayer(puntos, { radius: z <= 5 ? 14 : z <= 7 ? 20 : 26, blur: z <= 5 ? 14 : 20, maxZoom: 9, max: 1, minOpacity: 0.25, gradient: gradiente });
-}
 function pintarMapa() {
-  capaCalor.clearLayers(); capaPts.clearLayers();
+  capaLT.clearLayers(); capaAprox.clearLayers();
   const vis = U.filter(pasa);
-  const pts = u => u.hp.map(([x, y, w]) => [y, x, w]);
-  // leaflet.heat revienta con el mapa de ancho 0 (pestaña oculta): se dibuja al tomar tamaño
-  if (!mapa.getSize().x) { mapa.once('resize', () => pintarMapa()); }
-  else if (modoCalor === 'total') {
-    const c = filtro.ints.length === 1 ? filtro.ints[0].color : null;
-    capaCalor.addLayer(capaDeCalor(vis.flatMap(pts), c ? rampa(c) : RAMPA_TOTAL));
-  } else if (filtro.ints.length) {
-    // una capa por edad elegida, en su color; las más antiguas abajo. Una unidad que toca dos edades entra en ambas
-    for (const i of [...filtro.ints].sort((a, b) => b.base - a.base))
-      capaCalor.addLayer(capaDeCalor(vis.filter(u => solapa(u, i.base, i.techo)).flatMap(pts), rampa(i.color)));
-  } else {
-    const grupos = new Map();
-    for (const u of vis) { const k = u._icsPer?.id || 'sin'; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(...pts(u)); }
-    // los períodos más antiguos abajo
-    const orden = [...grupos.keys()].filter(k => k !== 'sin').map(k => ICS.X.find(x => x.id === k)).sort((a, b) => b.base - a.base);
-    for (const per of orden) capaCalor.addLayer(capaDeCalor(grupos.get(per.id), rampa(per.color)));
+  for (const u of vis) {
+    const c = colorDe(u), k = claseLT(u);
+    for (const m of MARCAS[u.id]) {
+      m.setStyle(k === 'aprox' ? { color: shade(c, -0.35), fillColor: c, fillOpacity: 0.1 } : { color: '#2b2420', fillColor: c, fillOpacity: k === 'lt' ? 0.95 : 0.45 });
+      (k === 'aprox' ? capaAprox : capaLT).addLayer(m);
+    }
   }
-  for (const u of vis) for (const m of MARCAS[u.id]) { m.setStyle({ fillColor: colorDe(u) }); capaPts.addLayer(m); }
+  pintarPol();
   return vis;
 }
-let tz;
-mapa.on('zoomend', () => { clearTimeout(tz); tz = setTimeout(() => U.length && pintarMapa(), 50); });
+
+/* ---- polígonos de las unidades elegidas (y de la que está abierta), generalizados según el zoom ---- */
+const POLS = { lejos: null, cerca: null }, cargandoPol = {};
+const ZOOM_CERCA = 9;
+let elegidas = [];  // ids fijados en el mapa
+const BORDES = ['#111111', '#8a3b12', '#1f5fa8', '#2f7d4f', '#7b3fa0', '#c0392b', '#0e7c86', '#8d6e00'];
+const bordeDe = id => BORDES[Math.max(0, elegidas.indexOf(id)) % BORDES.length];
+function cargarPol(nivel) {
+  if (POLS[nivel]) return Promise.resolve(POLS[nivel]);
+  return cargandoPol[nivel] ||= fetch(`data/pol_${nivel}.json`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(d => (POLS[nivel] = d))
+    .catch(e => { delete cargandoPol[nivel]; throw e; });
+}
+const nivelPol = () => mapa.getZoom() >= ZOOM_CERCA ? 'cerca' : 'lejos';
+let nivelDibujado = null;
+function pintarPol() {
+  capaPol.clearLayers();
+  const ids = [...new Set([...elegidas, ...(sel ? [sel] : [])])].map(id => BYID[id]).filter(u => u?.pol);
+  nivelDibujado = nivelPol();
+  if (!ids.length) return;
+  if (!POLS[nivelDibujado]) cargarPol(nivelDibujado).then(pintarPol).catch(e => console.error('polígonos:', e));
+  const P = POLS[nivelDibujado] || POLS.lejos || POLS.cerca;
+  if (!P) return;
+  // las más antiguas abajo
+  for (const u of ids.sort((a, b) => (b.mx ?? 0) - (a.mx ?? 0))) {
+    const partes = P[u.id];
+    if (!partes) continue;
+    const fijada = elegidas.includes(u.id);
+    const pol = L.polygon(partes.map(anillos => anillos.map(a => a.map(([x, y]) => [y, x]))), { renderer: rendPol, pane: 'polP',
+      color: fijada ? bordeDe(u.id) : '#111', weight: u.id === sel ? 2.2 : 1.3, dashArray: fijada ? null : '5 4', fillColor: colorDe(u), fillOpacity: 0.55 });
+    pol.on('click', ev => { L.DomEvent.stop(ev); elegir(u.id, false); });
+    pol.bindTooltip(u.n, { sticky: true, className: 'etiqueta-u' });
+    capaPol.addLayer(pol);
+  }
+}
+mapa.on('zoomend', () => { if (nivelPol() !== nivelDibujado) pintarPol(); });
+function alternarElegida(id) {
+  elegidas = elegidas.includes(id) ? elegidas.filter(x => x !== id) : [...elegidas, id];
+  if (elegidas.includes(id) && !mapa.hasLayer(capaPol)) { const c = CAPAS.find(c => c.id === 'pol'); alternarCapa(c, true); pintarPanelCapas(); }
+  pintarPol(); pintarLista(U.filter(pasa)); ponerHash();
+  if (sel && $('#p-ficha').classList.contains('on')) pintarFicha(BYID[sel]);
+}
+function verElegidas() {
+  const cajas = elegidas.map(id => BYID[id].bb).filter(Boolean);
+  if (cajas.length) mapa.flyToBounds([[Math.min(...cajas.map(b => b[1])), Math.min(...cajas.map(b => b[0]))], [Math.max(...cajas.map(b => b[3])), Math.max(...cajas.map(b => b[2]))]], { padding: [40, 40], maxZoom: 10, duration: 0.8 });
+}
+// punto dentro de un polígono con huecos (anillos [[x, y], …])
+function dentro(anillos, x, y) {
+  let d = false;
+  for (const a of anillos) for (let i = 0, j = a.length - 1; i < a.length; j = i++) {
+    const [xi, yi] = a[i], [xj, yj] = a[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) d = !d;
+  }
+  return d;
+}
+function ponerHash() {
+  const p = [];
+  if (sel) p.push('u=' + encodeURIComponent(BYID[sel].n));
+  if (elegidas.length) p.push('m=' + elegidas.map(id => encodeURIComponent(BYID[id].n)).join('|'));
+  history.replaceState(null, '', p.length ? '#' + p.join('&') : location.pathname + location.search);
+}
 const oscuro = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return 0.299 * r + 0.587 * g + 0.114 * b < 140; };
 function shade(hex, f) {
   const n = parseInt(hex.slice(1), 16), ch = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f));
@@ -160,19 +258,19 @@ function shade(hex, f) {
 /* ---------------- leyenda ---------------- */
 function pintarLeyenda(vis) {
   const caja = $('#leyenda');
-  if (filtro.ints.length && modoCalor === 'periodo') {
-    poner(caja, el('b', { onclick: plegarLeyenda }, 'Calor por edad elegida'), [...filtro.ints].sort((a, b) => b.base - a.base).map(i =>
-      el('div', {}, el('i', { style: `background:${i.color}` }), `${i.nombre} · ${vis.filter(u => solapa(u, i.base, i.techo)).length}`)));
-  } else if (colorPor === 'edad') {
+  const simbolos = [el('div', { class: 'sep' }), el('div', {}, el('i', { class: 'sim lleno' }), 'Localidad tipo (topónimo o coordenadas del texto)'),
+    el('div', {}, el('i', { class: 'sim medio' }), 'Referencia cercana a la localidad tipo'),
+    el('div', {}, el('i', { class: 'sim anillo' }), 'Sin localidad tipo ubicada: punto indicativo')];
+  if (colorPor === 'edad') {
     const cuenta = new Map();
     for (const u of vis) { const x = u._icsPer; if (x) cuenta.set(x, (cuenta.get(x) || 0) + 1); }
     const per = [...cuenta.keys()].sort((a, b) => a.techo - b.techo);
     poner(caja, el('b', { onclick: plegarLeyenda }, 'Edad (período)'), per.map(x => el('div', {}, el('i', { style: `background:${x.color}` }), `${x.nombre} · ${cuenta.get(x)}`)),
-      el('div', {}, el('i', { style: 'background:#9e9e9e' }), 'Sin edad reconocida'));
+      el('div', {}, el('i', { style: 'background:#9e9e9e' }), 'Sin edad reconocida'), simbolos);
   } else if (colorPor === 'tipo') {
-    poner(caja, el('b', { onclick: plegarLeyenda }, 'Tipo de unidad'), TIPOS.map(([k, n, c]) => el('div', {}, el('i', { style: `background:${c}` }), n)));
+    poner(caja, el('b', { onclick: plegarLeyenda }, 'Tipo de unidad'), TIPOS.map(([k, n, c]) => el('div', {}, el('i', { style: `background:${c}` }), n)), simbolos);
   } else {
-    poner(caja, el('b', { onclick: plegarLeyenda }, 'Litología principal'), CLASES.map(([k, n, c]) => el('div', {}, el('i', { style: `background:${c}` }), n)));
+    poner(caja, el('b', { onclick: plegarLeyenda }, 'Litología principal'), CLASES.map(([k, n, c]) => el('div', {}, el('i', { style: `background:${c}` }), n)), simbolos);
   }
 }
 
@@ -192,19 +290,47 @@ function pintarChips() {
 function alternar(set, k) { set.has(k) ? set.delete(k) : set.add(k); aplicar(); }
 
 let LIM = 80;
+const chipEdad = i => el('span', { class: 'chip on', style: `background:${i.color};border-color:${shade(i.color, -0.3)};color:${oscuro(i.color) ? '#fff' : '#111'}`,
+  title: `${escMa(i.base)} – ${escMa(i.techo)}` }, i.nombre, el('button', { class: 'quitar', title: 'Quitar', onclick: e => { e.stopPropagation(); e.preventDefault(); elegirIntervalo(i); } }, '✕'));
 function pintarLista(vis) {
-  const conPol = vis.filter(u => u.gdb && !u.gen).length;
-  poner($('#resumen'), el('b', {}, fmt(vis.length)), ` unidades a la vista · ${fmt(conPol)} con afloramientos en las GDB · ${fmt(vis.length - conPol)} ubicadas por carta`,
-    filtro.ints.length ? el('div', { class: 'edades-elegidas' }, filtro.ints.length > 1 ? 'Edades: ' : 'Edad: ',
-      filtro.ints.map(i => el('span', { class: 'chip on', style: `background:${i.color};border-color:${shade(i.color, -0.3)};color:${oscuro(i.color) ? '#fff' : '#111'}`,
-        title: `${escMa(i.base)} – ${escMa(i.techo)}` }, i.nombre, el('button', { class: 'quitar', title: 'Quitar', onclick: () => elegirIntervalo(i) }, '✕'))),
-      el('button', { class: 'enlace', onclick: () => { filtro.ints = []; aplicar(); } }, filtro.ints.length > 1 ? 'quitar todas' : 'quitar')) : null);
+  const conLT = vis.filter(u => u.lt).length, conPol = vis.filter(u => u.pol).length;
+  poner($('#resumen'), el('b', {}, fmt(vis.length)), ` unidades · ${fmt(conLT)} con localidad tipo o referencia cercana en el mapa · ${fmt(conPol)} con polígonos de las GDB`);
+  // unidades fijadas en el mapa
+  poner($('#en-mapa'), elegidas.length ? [el('span', { class: 'rot' }, `En el mapa (${elegidas.length}):`),
+    elegidas.map(id => el('span', { class: 'chip fijada', style: `border-color:${bordeDe(id)}` },
+      el('i', { style: `background:${colorDe(BYID[id])};border:2px solid ${bordeDe(id)}` }),
+      el('button', { class: 'enlace', onclick: () => elegir(id, true) }, BYID[id].n),
+      el('button', { class: 'quitar', title: 'Quitar del mapa', onclick: () => alternarElegida(id) }, '✕'))),
+    el('button', { class: 'enlace', onclick: verElegidas }, 'ver todas'),
+    el('button', { class: 'enlace', onclick: () => { elegidas = []; pintarPol(); pintarLista(U.filter(pasa)); ponerHash(); } }, 'quitar todas')] : null);
+  $('#en-mapa').hidden = !elegidas.length;
   const orden = [...vis].sort((a, b) => (b.rev - a.rev) || (b.nf + b.cartas.length * 3) - (a.nf + a.cartas.length * 3));
   $('#lista-titulo').textContent = `Unidades (${fmt(vis.length)})`;
-  poner($('#lista'), orden.slice(0, LIM).map(u => el('li', { onclick: () => elegir(u.id, true) },
+  poner($('#lista'), orden.slice(0, LIM).map(u => el('li', { class: u.id === sel ? 'sel' : null, onclick: () => elegir(u.id, true) },
     el('i', { style: `background:${colorDe(u)}` }),
-    el('span', {}, u.n, u.rev ? el('em', {}, ' ✔') : null, el('small', {}, [u.edad.replace(/\[[^\]]*\]|\([^)]*CGCH[^)]*\)/g, '').slice(0, 70) || 'Edad sin dato', u.cl.length ? ' · ' + u.cl.map(c => CL[c].n.split(' ')[0]).join(', ') : ''].join(''))))),
+    el('span', {}, u.n, u.rev ? el('em', {}, ' ✔') : null, el('small', {}, [u.edad.replace(/\[[^\]]*\]|\([^)]*CGCH[^)]*\)/g, '').slice(0, 70) || 'Edad sin dato', u.cl.length ? ' · ' + u.cl.map(c => CL[c].n.split(' ')[0]).join(', ') : ''].join(''))),
+    u.pol ? el('button', { class: 'fijar' + (elegidas.includes(u.id) ? ' on' : ''), title: elegidas.includes(u.id) ? 'Quitar sus polígonos del mapa' : 'Mostrar sus polígonos en el mapa',
+      'aria-pressed': elegidas.includes(u.id) ? 'true' : 'false', onclick: e => { e.stopPropagation(); alternarElegida(u.id); } }, elegidas.includes(u.id) ? '✓ en el mapa' : '＋ mapa') : null)),
     orden.length > LIM ? el('li', {}, el('button', { class: 'btn mas', onclick: e => { e.stopPropagation(); LIM += 200; pintarLista(vis); } }, `Ver ${fmt(Math.min(200, orden.length - LIM))} más`)) : null);
+}
+
+// edad en la pestaña Unidades: períodos de un toque + tabla completa plegable
+function pintarEdadRapida() {
+  const pasan = U.filter(pasaSinEdad).filter(u => u.mx != null);
+  const cuenta = x => pasan.reduce((n, u) => n + solapa(u, x.base, x.techo), 0);
+  const per = ICS.X.filter(x => x.tipo === 'periodo').sort((a, b) => a.techo - b.techo);
+  const pre = ICS.X.filter(x => x.tipo === 'eon' && x.techo >= 538);
+  poner($('#edad-rapida'), [...per, ...pre].map(x => {
+    const n = cuenta(x), on = filtro.ints.some(i => i.id === x.id);
+    return n || on ? el('button', { class: 'per' + (on ? ' on' : ''), style: `background:${x.color};color:${oscuro(x.color) ? '#fff' : '#111'}`,
+      title: `${x.nombre}: ${escMa(x.base)} a ${escMa(x.techo)} · ${fmt(n)} unidades`, 'aria-pressed': on ? 'true' : 'false', onclick: () => elegirIntervalo(x) },
+    x.nombre, el('small', {}, fmt(n))) : null;
+  }));
+  poner($('#edad-elegidas'), filtro.ints.length ? [filtro.ints.map(chipEdad),
+    el('button', { class: 'enlace', onclick: () => { filtro.ints = []; aplicar(); } }, filtro.ints.length > 1 ? 'quitar todas' : 'quitar')] : null);
+  $('#edad-elegidas').hidden = !filtro.ints.length;
+  const nf = filtro.tipos.size + filtro.lito.size + (filtro.amb ? 1 : 0) + filtro.rev + filtro.pol + filtro.gen;
+  $('#n-filtros').textContent = nf ? ` · ${nf} activo${nf === 1 ? '' : 's'}` : '';
 }
 
 /* ---------------- panel: edad ---------------- */
@@ -231,16 +357,13 @@ function pintarTiempo() {
     x.hijos.forEach((h, k) => recorrer(h, k === 0 ? fila : []));
   };
   ICS.raices.forEach(r => recorrer(r, []));
-  poner($('#p-edad'),
-    el('p', { class: 'nota' }, 'Toca uno o varios eones, eras, períodos, épocas o pisos para ver en el mapa solo las unidades de esas edades, cada una con su color; tócalo de nuevo para quitarlo. Una unidad cuenta en cada intervalo que toca su rango de edad.'),
-    el('div', { class: 'fila-btns' },
-      el('button', { class: 'btn' + (!filtro.ints.length ? ' primario' : ''), onclick: () => { filtro.ints = []; aplicar(); } }, 'Todas las edades'),
-      el('button', { class: 'btn', onclick: iniciarMaquina }, '▶ Máquina del tiempo')),
-    el('table', { class: 'ics' },
+  poner($('#tabla-edad'),
+    el('p', { class: 'nota' }, 'Toca uno o varios eones, eras, períodos, épocas o pisos: la lista y el mapa muestran solo las unidades de esas edades. Tócalo de nuevo para quitarlo. Una unidad cuenta en cada intervalo que toca su rango de edad.'),
+    el('div', { class: 'tabla-scroll' }, el('table', { class: 'ics' },
       el('thead', {}, el('tr', {}, ['Eón', 'Era', 'Per.', 'Época', 'Piso', 'Ma', 'N.º'].map(h => el('th', {}, h)))),
-      el('tbody', {}, filas)),
+      el('tbody', {}, filas))),
     el('p', { class: 'nota' }, 'Tabla Cronoestratigráfica Internacional (Comisión Internacional de Estratigrafía, versión 2024/12), con sus colores oficiales. «Ma»: edad de la base de cada piso. «N.º»: unidades (con los demás filtros) cuyo rango de edad toca ese piso.'),
-    sin ? el('p', { class: 'nota' }, `${fmt(sin)} unidades no tienen una edad reconocible en el texto: aparecen solo con «Todas las edades».`) : null,
+    sin ? el('p', { class: 'nota' }, `${fmt(sin)} unidades no tienen una edad reconocible en el texto: aparecen solo cuando no hay ninguna edad elegida.`) : null,
     el('p', { class: 'nota' }, el('a', { href: 'https://stratigraphy.org/chart', target: '_blank', rel: 'noopener' }, 'Tabla oficial en stratigraphy.org ↗')));
 }
 function elegirIntervalo(x) {
@@ -325,23 +448,33 @@ function pintarPerfil(vis) {
 }
 
 /* ---------------- ficha ---------------- */
-function elegir(id, volar, latlng) {
+function elegir(id, volar) {
   sel = id;
   const u = BYID[id];
-  capaSel.clearLayers(); capaEnl.clearLayers();
-  for (const [x, y] of u.hp) L.circleMarker([y, x], { interactive: false, radius: 5, color: '#111', weight: 2, fillColor: '#fff', fillOpacity: 0.6 }).addTo(capaSel);
+  capaSel.clearLayers(); capaEnl.clearLayers(); capaRes.clearLayers();
+  for (const m of MARCAS[u.id]) L.circleMarker(m.getLatLng(), { interactive: false, radius: 10, color: '#111', weight: 2.5, fill: false }).addTo(capaRes);
   for (const c of u.cartas) if (CARTAS[c]) {
     const [s, n, w, e] = CARTAS[c].b;
     L.rectangle([[s, w], [n, e]], { interactive: false, color: '#8a3b12', weight: 1.5, dashArray: '6 5', fill: false }).addTo(capaSel);
   }
   // correlaciones: líneas a las unidades nombradas en el texto
-  for (const o of u.enl) { const v = BYID[o]; if (v?.c && u.c) L.polyline([[u.c[1], u.c[0]], [v.c[1], v.c[0]]], { color: '#8a3b12', weight: 2, dashArray: '2 6', opacity: 0.9, interactive: false }).addTo(capaEnl); }
-  if (volar && u.bb) mapa.flyToBounds([[u.bb[1], u.bb[0]], [u.bb[3], u.bb[2]]], { padding: [40, 40], maxZoom: 10, duration: 0.8 });
+  const pos = v => v.lt ? [v.lt.y, v.lt.x] : v.c ? [v.c[1], v.c[0]] : null;
+  for (const o of u.enl) { const v = BYID[o]; if (v && pos(v) && pos(u)) L.polyline([pos(u), pos(v)], { color: '#8a3b12', weight: 2, dashArray: '2 6', opacity: 0.9, interactive: false }).addTo(capaEnl); }
+  if (volar) volarA(u);
+  pintarPol();
   pintarFicha(u);
   abrir('ficha');
-  location.hash = 'u=' + encodeURIComponent(u.n);
+  ponerHash();
   if ($('#p-perfil').classList.contains('on')) pintarPerfil(U.filter(pasa));
 }
+function volarA(u) {
+  if (u.bb) {
+    const b = L.latLngBounds([[u.bb[1], u.bb[0]], [u.bb[3], u.bb[2]]]);
+    if (u.lt) b.extend([u.lt.y, u.lt.x]);
+    mapa.flyToBounds(b, { padding: [40, 40], maxZoom: 10, duration: 0.8 });
+  } else if (u.lt) mapa.flyTo([u.lt.y, u.lt.x], 10, { duration: 0.8 });
+}
+const gms = (v, pos, neg) => { const a = Math.abs(v), g = Math.floor(a), m = Math.round((a - g) * 60); return `${m === 60 ? g + 1 : g}°${String(m === 60 ? 0 : m).padStart(2, '0')}′${v < 0 ? neg : pos}`; };
 function barraEdad(u) {
   if (u.mx == null) return null;
   const per = ICS.X.filter(x => x.tipo === 'periodo' && x.base <= 541);
@@ -363,7 +496,12 @@ function pintarFicha(u) {
     el('dl', {},
       el('dt', {}, 'Edad'), el('dd', {}, citas(u.edad || 'Sin dato'),
         u.mx != null ? el('div', { class: 'ref' }, `Rango usado en el visor: ${escMa(u.mx)} – ${escMa(u.mn)}${u.fe === 'gdb' ? ' (de la GDB)' : ''}`) : null, barraEdad(u)),
-      filaDD('Localidad tipo', u.loc), filaDD('Litología', u.lit),
+      u.loc || u.lt ? [el('dt', {}, 'Localidad tipo'), el('dd', {}, citas(u.loc || 'Sin texto en la tabla.'),
+        u.lt ? el('div', { class: 'ref lt-geo' }, el('i', { class: 'sim ' + (claseLT(u) === 'lt' ? 'lleno' : 'medio') }),
+          `En el mapa: ${u.lt.t ? u.lt.t + ' · ' : ''}${gms(u.lt.y, 'N', 'S')}, ${gms(u.lt.x, 'E', 'O')} · ${PREC_TXT[u.lt.p] || u.lt.p}${u.lt.f ? ` (${u.lt.f === 'IGM' ? 'toponimia IGM 1:50.000' : u.lt.f})` : ''}. `,
+          el('button', { class: 'enlace', onclick: () => mapa.flyTo([u.lt.y, u.lt.x], Math.max(mapa.getZoom(), 11), { duration: 0.8 }) }, claseLT(u) === 'lt' ? 'Ir a la localidad tipo' : 'Ir al punto en el mapa'))
+          : el('div', { class: 'ref' }, 'Sin georreferenciar: el texto no nombra un lugar que se pueda ubicar con certeza.'))] : null,
+      filaDD('Litología', u.lit),
       u.rocas.length ? [el('dt', {}, 'Rocas más mencionadas'), el('dd', {}, u.rocas.join(', '))] : null,
       filaDD('Correlaciones', u.corr),
       enl.length ? [el('dt', {}, 'Ir a las unidades correlacionadas'), el('dd', {}, enl.map(v => el('div', {}, el('button', { class: 'enlace', onclick: () => elegir(v.id, true) }, v.n))))] : null,
@@ -377,10 +515,11 @@ function pintarFicha(u) {
         CARTAS[c]?.t ? ` · ${CARTAS[c].t.replace(/^\d{4}\.\s*/, '').slice(0, 80)}` : '', CARTAS[c]?.aprox ? ' (marco aproximado)' : ''))) : 'Solo en la bibliografía'),
       typeof filaYacimientosDe === 'function' ? filaYacimientosDe(u) : null,
       el('dt', {}, 'Ubicación en el mapa'),
-      el('dd', {}, u.gdb && !u.gen ? `${fmt(u.hp.length)} afloramientos en ${u.gdb} unidad${u.gdb === 1 ? '' : 'es'} de las GDB (círculos negros).` : u.pts.length ? 'Sin GDB: el punto marca la carta que la describe (marco punteado).' : 'Sin ubicación: no hay carta georreferenciada que la describa.'),
+      el('dd', {}, u.pol ? `Polígonos de las GDB: ${fmt(u.na)} polígono${u.na === 1 ? '' : 's'} (ya generalizados), de ${u.gdb} registro${u.gdb === 1 ? '' : 's'} de la unidad en las cartas. Con el país a la vista se dibujan generalizados a ~1 km; al acercarse, a ~250 m. No sirven para medir superficies ni para ubicar contactos.` : u.pts.length ? 'Sin polígonos en las GDB: el punto marca la carta que la describe (marco punteado), no un afloramiento.' : u.lt ? 'Sin polígonos ni carta georreferenciada: solo la localidad tipo.' : 'Sin ubicación: no hay carta georreferenciada que la describa.'),
       contemporaneas.length ? [el('dt', {}, 'Contemporáneas y cercanas (±1,5°)'), el('dd', {}, contemporaneas.map(v => el('div', {}, el('button', { class: 'enlace', onclick: () => elegir(v.id, true) }, v.n), el('span', { class: 'ref' }, ` · ${escMa(v.mx)}–${escMa(v.mn)}`))))] : null),
     el('div', { class: 'fila-btns' },
-      u.bb ? el('button', { class: 'btn', onclick: () => mapa.flyToBounds([[u.bb[1], u.bb[0]], [u.bb[3], u.bb[2]]], { padding: [40, 40], maxZoom: 10 }) }, 'Ver en el mapa') : null,
+      u.bb || u.lt ? el('button', { class: 'btn', onclick: () => volarA(u) }, 'Ver en el mapa') : null,
+      u.pol ? el('button', { class: 'btn' + (elegidas.includes(u.id) ? ' primario' : ''), onclick: () => alternarElegida(u.id) }, elegidas.includes(u.id) ? '✓ Fijada en el mapa' : '＋ Fijar sus polígonos') : null,
       el('button', { class: 'btn', onclick: () => { filtro.q = norm(u.n); $('#q').value = u.n; aplicar(); abrir('unidades'); } }, 'Solo esta'),
       el('button', { class: 'btn', onclick: () => { navigator.clipboard?.writeText(location.href); } }, 'Copiar enlace'))));
 }
@@ -388,19 +527,20 @@ function pintarFicha(u) {
 /* ---------------- ¿qué hay aquí? ---------------- */
 mapa.on('click', ev => {
   const { lat, lng } = ev.latlng, p0 = mapa.latLngToContainerPoint(ev.latlng);
-  const cerca = ([x, y]) => p0.distanceTo(mapa.latLngToContainerPoint([y, x])) < 14;
-  const enPol = U.filter(u => pasa(u) && u.gdb && !u.gen && u.hp.some(cerca));
+  const P = POLS.cerca || POLS.lejos || {};
+  const enPol = U.filter(u => pasa(u) && u.pol && u.bb && lng >= u.bb[0] && lng <= u.bb[2] && lat >= u.bb[1] && lat <= u.bb[3] && (P[u.id] || []).some(a => dentro(a, lng, lat)));
   const cartas = Object.entries(CARTAS).filter(([, c]) => lat >= c.b[0] && lat <= c.b[1] && lng >= c.b[2] && lng <= c.b[3]).map(([k]) => k);
   const enCarta = U.filter(u => pasa(u) && !enPol.includes(u) && u.cartas.some(c => cartas.includes(c)));
   const ys = typeof yacimientosCerca === 'function' ? yacimientosCerca(ev) : [];
   if (!enPol.length && !enCarta.length && !ys.length) return;
+  void p0;
   const b = u => el('button', { class: 'enlace', onclick: () => { mapa.closePopup(); elegir(u.id, false); } }, el('i', { style: `display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;background:${colorDe(u)}` }), u.n);
   const byY = r => el('button', { class: 'enlace', onclick: () => { mapa.closePopup(); elegirY(r.i, false); } }, el('i', { style: `display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:${colorY(r)}` }), r.n,
     el('span', { class: 'ref' }, r.mx != null ? ` · ${escMa(r.mx)}–${escMa(r.mn)}` : ''));
-  L.popup({ maxWidth: 300, maxHeight: 280 }).setLatLng(ev.latlng).setContent(el('div', {},
+  L.popup({ maxWidth: Math.min(300, innerWidth - 60), maxHeight: 280 }).setLatLng(ev.latlng).setContent(el('div', {},
     ys.length ? [el('b', {}, 'Yacimientos aquí'), ys.map(byY)] : null,
-    enPol.length ? [el('b', {}, 'Afloran aquí (GDB)'), enPol.map(b)] : null,
-    enCarta.length ? [el('b', {}, `Descritas en ${cartas.length > 1 ? 'las cartas' : 'la carta'} de este lugar`),
+    enPol.length ? [el('b', {}, 'Cartografiadas aquí o en las inmediaciones (polígonos generalizados de las GDB)'), enPol.map(b)] : null,
+    enCarta.length ? [el('b', {}, `Descritas en ${cartas.length > 1 ? 'las cartas que cubren' : 'la carta que cubre'} este punto (no necesariamente presentes aquí)`),
       enCarta.slice(0, 40).map(b), enCarta.length > 40 ? el('div', { class: 'ref' }, `y ${enCarta.length - 40} más…`) : null] : null)).openOn(mapa);
 });
 
@@ -426,13 +566,11 @@ function abrir(p) {
   $$('.pag').forEach(s => s.classList.toggle('on', s.id === 'p-' + p));
   $('#panel').classList.remove('min'); document.body.classList.remove('panel-min');
   if (p === 'perfil') pintarPerfil(U.filter(pasa));
-  if (p === 'edad') pintarTiempo();
   if (p === 'yac' && typeof pintarYacPanel === 'function') pintarYacPanel();
 }
 $$('#pestanas button').forEach(b => b.onclick = () => abrir(b.dataset.p));
 $('#asa').onclick = () => { $('#panel').classList.toggle('min'); document.body.classList.toggle('panel-min'); };
 $$('#color-por button').forEach(b => b.onclick = () => { colorPor = b.dataset.c; $$('#color-por button').forEach(x => x.classList.toggle('on', x === b)); aplicar(false); });
-$$('#modo-calor button').forEach(b => b.onclick = () => { modoCalor = b.dataset.m; $$('#modo-calor button').forEach(x => x.classList.toggle('on', x === b)); aplicar(false); });
 $$('#f-amb button').forEach(b => b.onclick = () => { filtro.amb = b.dataset.a; $$('#f-amb button').forEach(x => x.classList.toggle('on', x === b)); aplicar(); });
 $$('#escala-t button').forEach(b => b.onclick = () => { escalaT = b.dataset.e; $$('#escala-t button').forEach(x => x.classList.toggle('on', x === b)); pintarPerfil(U.filter(pasa)); });
 $('#f-rev').onchange = e => { filtro.rev = e.target.checked; aplicar(); };
@@ -444,13 +582,14 @@ $('#limpiar').onclick = () => {
   $$('#f-amb button').forEach(x => x.classList.toggle('on', x.dataset.a === '')); aplicar();
 };
 $('#maquina').onclick = iniciarMaquina;
+$('#d-edad').addEventListener('toggle', () => { if ($('#d-edad').open) pintarTiempo(); });
 
 function aplicar(reiniciarLista = true) {
   if (reiniciarLista) LIM = 80;
   const vis = pintarMapa();
-  pintarLeyenda(vis); pintarChips(); pintarLista(vis);
+  pintarLeyenda(vis); pintarChips(); pintarEdadRapida(); pintarLista(vis);
   if (typeof pintarYac === 'function') pintarYac();  // yac.js: los yacimientos siguen las edades elegidas
-  if ($('#p-edad').classList.contains('on')) pintarTiempo();
+  if ($('#d-edad').open) pintarTiempo();
   if ($('#p-perfil').classList.contains('on')) pintarPerfil(vis);
 }
 
@@ -459,19 +598,23 @@ function aplicar(reiniciarLista = true) {
   const j = n => fetch(n).then(r => r.json());
   const [du, dc, di] = await Promise.all([j('data/unidades.json'), j('data/cartas.json'), j('data/ics.json')]);
   U = du.unidades; CARTAS = dc; ICS = armarICS(di.unidades);
-  $('#fecha-datos').textContent = `Datos generados el ${du.generado}: ${fmt(U.length)} unidades, ${fmt(U.filter(u => u.gdb && !u.gen).length)} con afloramientos en las GDB.`;
+  $('#fecha-datos').textContent = `Datos generados el ${du.generado}: ${fmt(U.length)} unidades, ${fmt(U.filter(u => u.lt).length)} con localidad tipo georreferenciada o con una referencia cercana, ${fmt(U.filter(u => u.pol).length)} con polígonos de las GDB.`;
   for (const u of U) {
     BYID[u.id] = u;
-    u._txt = norm([u.n, u.loc, u.lit, u.corr, u.rocas.join(' '), u.aut, u.sig, u.libro].join(' '));
+    u._txt = norm([u.n, u.loc, u.lt?.t, u.lit, u.corr, u.rocas.join(' '), u.aut, u.sig, u.libro].join(' '));
     const m = medio(u);
     if (m != null) { const x = icsDe(m, 3); u._colEdad = x?.color; u._icsPer = icsDe(m, 2); }
   }
   construirCapas();
   aplicar();
   if (typeof cargarYac === 'function') cargarYac().catch(e => console.error('yacimientos:', e));
-  const h = decodeURIComponent(location.hash.replace(/^#u=/, ''));
-  const u0 = h && U.find(u => u.n === h);
-  if (u0) elegir(u0.id, true);
+  cargarPol('lejos').then(pintarPol).catch(e => console.error('polígonos:', e));  // liviano: también sirve a «¿qué hay aquí?»
+  const hp = new URLSearchParams(location.hash.slice(1).replace(/\+/g, '%2B'));
+  const porNombre = n => U.find(u => u.n === n);
+  elegidas = (hp.get('m') || '').split('|').map(porNombre).filter(u => u?.pol).map(u => u.id);
+  const u0 = hp.get('u') && porNombre(hp.get('u'));
+  if (elegidas.length) aplicar();
+  if (u0) elegir(u0.id, true); else if (elegidas.length) setTimeout(verElegidas, 300);
   // en localhost no: el caché del SW escondería los cambios mientras se trabaja
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
