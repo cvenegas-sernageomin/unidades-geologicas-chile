@@ -12,3 +12,12 @@ Cartas Geológicas de Chile (SERNAGEOMIN): dónde afloran, de qué rocas son, qu
 
 Los datos de `data/` se generan con `tools/armar_datos.py`. No es un producto oficial de SERNAGEOMIN: para trabajo formal,
 consultar la carta original.
+
+## Capa de yacimientos
+
+Un punto por yacimiento (≈10.400, ≈2.000 con edad del depósito): tipo, sustancia, edad, roca de caja y, cuando el nombre calza, enlace a
+la unidad del visor. Fuentes: base de Recursos Minerales de SERNAGEOMIN (GDB de las cartas), USGS MRDS (2012, dominio público) y las
+edades de los principales depósitos de Maksaev, Townley, Palacios y Camus (2007), cap. 6 de *The Geology of Chile*. Se arma con
+`tools/armar_yacimientos.py` (la tabla de Maksaev et al. está a mano en `tools/yac_maksaev.py`). La «edad» de algunas filas de las bases
+es la de la roca de caja; cada ficha dice de dónde viene la edad.
+

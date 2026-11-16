@@ -98,7 +98,7 @@ BASES['Gris claro (Esri)'].addTo(mapa);
 const rend = L.canvas({ padding: 0.3, tolerance: 4 });
 const capaCalor = L.layerGroup().addTo(mapa), capaPts = L.layerGroup(), capaSel = L.layerGroup().addTo(mapa);
 const capaEnl = L.layerGroup().addTo(mapa);
-L.control.layers(BASES, { 'Mapa de calor': capaCalor, 'Puntos de las unidades': capaPts }, { position: 'bottomright' }).addTo(mapa);
+const layersControl = L.control.layers(BASES, { 'Mapa de calor': capaCalor, 'Puntos de las unidades': capaPts }, { position: 'bottomright' }).addTo(mapa);
 // los puntos se encienden solos al acercarse (con todo el país a la vista solo tapan el calor)
 const ZOOM_PUNTOS = 8;
 mapa.on('zoomend', () => { if (mapa.getZoom() >= ZOOM_PUNTOS) capaPts.addTo(mapa); else capaPts.remove(); });
@@ -375,6 +375,7 @@ function pintarFicha(u) {
         CARTAS[c] ? el('button', { class: 'enlace', onclick: () => { const [s, n, w, e] = CARTAS[c].b; mapa.flyToBounds([[s, w], [n, e]], { padding: [30, 30] }); } },
           c.replace('CGCH_GB_', 'GB-').replace('CGCH_', 'Carta ').replace(/_/g, '-')) : c,
         CARTAS[c]?.t ? ` · ${CARTAS[c].t.replace(/^\d{4}\.\s*/, '').slice(0, 80)}` : '', CARTAS[c]?.aprox ? ' (marco aproximado)' : ''))) : 'Solo en la bibliografía'),
+      typeof filaYacimientosDe === 'function' ? filaYacimientosDe(u) : null,
       el('dt', {}, 'Ubicación en el mapa'),
       el('dd', {}, u.gdb && !u.gen ? `${fmt(u.hp.length)} afloramientos en ${u.gdb} unidad${u.gdb === 1 ? '' : 'es'} de las GDB (círculos negros).` : u.pts.length ? 'Sin GDB: el punto marca la carta que la describe (marco punteado).' : 'Sin ubicación: no hay carta georreferenciada que la describa.'),
       contemporaneas.length ? [el('dt', {}, 'Contemporáneas y cercanas (±1,5°)'), el('dd', {}, contemporaneas.map(v => el('div', {}, el('button', { class: 'enlace', onclick: () => elegir(v.id, true) }, v.n), el('span', { class: 'ref' }, ` · ${escMa(v.mx)}–${escMa(v.mn)}`))))] : null),
@@ -391,9 +392,13 @@ mapa.on('click', ev => {
   const enPol = U.filter(u => pasa(u) && u.gdb && !u.gen && u.hp.some(cerca));
   const cartas = Object.entries(CARTAS).filter(([, c]) => lat >= c.b[0] && lat <= c.b[1] && lng >= c.b[2] && lng <= c.b[3]).map(([k]) => k);
   const enCarta = U.filter(u => pasa(u) && !enPol.includes(u) && u.cartas.some(c => cartas.includes(c)));
-  if (!enPol.length && !enCarta.length) return;
+  const ys = typeof yacimientosCerca === 'function' ? yacimientosCerca(ev) : [];
+  if (!enPol.length && !enCarta.length && !ys.length) return;
   const b = u => el('button', { class: 'enlace', onclick: () => { mapa.closePopup(); elegir(u.id, false); } }, el('i', { style: `display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;background:${colorDe(u)}` }), u.n);
+  const byY = r => el('button', { class: 'enlace', onclick: () => { mapa.closePopup(); elegirY(r.i, false); } }, el('i', { style: `display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:${colorY(r)}` }), r.n,
+    el('span', { class: 'ref' }, r.mx != null ? ` · ${escMa(r.mx)}–${escMa(r.mn)}` : ''));
   L.popup({ maxWidth: 300, maxHeight: 280 }).setLatLng(ev.latlng).setContent(el('div', {},
+    ys.length ? [el('b', {}, 'Yacimientos aquí'), ys.map(byY)] : null,
     enPol.length ? [el('b', {}, 'Afloran aquí (GDB)'), enPol.map(b)] : null,
     enCarta.length ? [el('b', {}, `Descritas en ${cartas.length > 1 ? 'las cartas' : 'la carta'} de este lugar`),
       enCarta.slice(0, 40).map(b), enCarta.length > 40 ? el('div', { class: 'ref' }, `y ${enCarta.length - 40} más…`) : null] : null)).openOn(mapa);
@@ -422,6 +427,7 @@ function abrir(p) {
   $('#panel').classList.remove('min'); document.body.classList.remove('panel-min');
   if (p === 'perfil') pintarPerfil(U.filter(pasa));
   if (p === 'edad') pintarTiempo();
+  if (p === 'yac' && typeof pintarYacPanel === 'function') pintarYacPanel();
 }
 $$('#pestanas button').forEach(b => b.onclick = () => abrir(b.dataset.p));
 $('#asa').onclick = () => { $('#panel').classList.toggle('min'); document.body.classList.toggle('panel-min'); };
@@ -443,6 +449,7 @@ function aplicar(reiniciarLista = true) {
   if (reiniciarLista) LIM = 80;
   const vis = pintarMapa();
   pintarLeyenda(vis); pintarChips(); pintarLista(vis);
+  if (typeof pintarYac === 'function') pintarYac();  // yac.js: los yacimientos siguen las edades elegidas
   if ($('#p-edad').classList.contains('on')) pintarTiempo();
   if ($('#p-perfil').classList.contains('on')) pintarPerfil(vis);
 }
@@ -461,6 +468,7 @@ function aplicar(reiniciarLista = true) {
   }
   construirCapas();
   aplicar();
+  if (typeof cargarYac === 'function') cargarYac().catch(e => console.error('yacimientos:', e));
   const h = decodeURIComponent(location.hash.replace(/^#u=/, ''));
   const u0 = h && U.find(u => u.n === h);
   if (u0) elegir(u0.id, true);

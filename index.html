@@ -10,7 +10,7 @@
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=5">
+<link rel="stylesheet" href="app.css?v=6">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -34,6 +34,7 @@
   <nav id="pestanas" role="tablist">
     <button role="tab" data-p="unidades" class="on"><i>🪨</i>Unidades</button>
     <button role="tab" data-p="edad"><i>⏳</i>Edad</button>
+    <button role="tab" data-p="yac"><i>⛏️</i>Yacimientos</button>
     <button role="tab" data-p="perfil"><i>📈</i>Tiempo–latitud</button>
     <button role="tab" data-p="ficha"><i>📄</i>Ficha</button>
     <button role="tab" data-p="acerca"><i>ℹ️</i>Acerca</button>
@@ -65,6 +66,31 @@
       <ol id="lista"></ol>
     </section>
     <section id="p-edad" class="pag"></section>
+    <section id="p-yac" class="pag">
+      <div class="resumen" id="y-resumen"></div>
+      <label class="chk"><input type="checkbox" id="y-on" checked> Mostrar los yacimientos en el mapa</label>
+      <label class="chk"><input type="checkbox" id="y-ocultarcalor"> Ocultar el mapa de calor de las unidades</label>
+      <p class="nota" id="y-leyenda-nota">Un punto por yacimiento: tipo, edad del depósito y roca de caja. Toca un punto para ver su ficha; la roca de caja se enlaza con la unidad del visor.</p>
+      <h3>Color de los puntos</h3>
+      <div class="segm" id="y-color"><button data-c="tipo" class="on">Tipo</button><button data-c="edad">Edad</button></div>
+      <div id="y-leyenda" class="ley-yac"></div>
+      <h3>Buscar</h3>
+      <label class="buscar buscar-panel"><span aria-hidden="true">🔎</span><input id="y-q" type="search" placeholder="Nombre, distrito, unidad de caja…" autocomplete="off" spellcheck="false"></label>
+      <h3>Sustancia</h3>
+      <div class="chips" id="y-f-sus"></div>
+      <h3>Tipo de yacimiento</h3>
+      <div class="chips" id="y-f-tipo"></div>
+      <h3>Fuente</h3>
+      <div class="chips" id="y-f-fu"></div>
+      <h3>Más filtros</h3>
+      <label class="chk"><input type="checkbox" id="y-soloedad" checked> Solo con registro de edad del depósito</label>
+      <label class="chk"><input type="checkbox" id="y-solocaja"> Solo con roca de caja registrada</label>
+      <label class="chk"><input type="checkbox" id="y-usaredades" checked> Usar las edades elegidas en la pestaña «Edad»</label>
+      <div class="fila-btns"><button class="btn" id="y-limpiar">Quitar filtros</button></div>
+      <p class="nota" id="y-fecha"></p>
+      <h3 id="y-lista-titulo">Yacimientos</h3>
+      <ol id="y-lista"></ol>
+    </section>
     <section id="p-perfil" class="pag">
       <p class="nota">Cada barra es una unidad: va de su edad más antigua a la más joven, a la latitud donde aflora. Así se ve cómo
         el magmatismo y la sedimentación se movieron en el tiempo (por ejemplo, la migración del arco hacia el este desde el Jurásico).
@@ -90,6 +116,17 @@
         <li><b>Edad numérica</b> (para filtrar y colorear): leída del texto de edad («Mioceno Inferior», «ca. 18,6 Ma») con la Tabla
           Cronoestratigráfica Internacional 2024/12. Si la carta no da edad, se usa la de la GDB.</li>
       </ul>
+      <h3>Yacimientos</h3>
+      <ul>
+        <li><b>SERNAGEOMIN (GDB)</b>: base de Recursos Minerales de las cartas geológicas (8.100 yacimientos y prospectos), con edad,
+          tipo, forma y unidad o litología de caja cuando la carta las registra.</li>
+        <li><b>USGS MRDS</b> (2012, dominio público): sitios de Chile con tipo y roca de caja, sin edad. Parte de sus coordenadas
+          son imprecisas.</li>
+        <li><b>Maksaev et al. (2007)</b>, cap. 6 de <i>The Geology of Chile</i>: edades de los principales depósitos (pórfidos, epitermales,
+          IOCG, hierro, estratoligados), tomadas a mano del texto. Cada edad dice si es del depósito, de la roca asociada o del cinturón.</li>
+        <li>Un yacimiento de las GDB y uno del MRDS a menos de ~800 m se fundieron en uno. La «edad» de la base a veces es la de la roca
+          de caja y no la del depósito: verificar en la fuente antes de citar.</li>
+      </ul>
       <p class="nota">No es un producto oficial de SERNAGEOMIN. Para trabajo formal, consultar la carta original.</p>
       <p class="nota" id="fecha-datos"></p>
     </section>
@@ -98,6 +135,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
+<script src="yac.js?v=4"></script>
 </body>
 </html>
