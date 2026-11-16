@@ -35,7 +35,8 @@ TIPOS = [
     ("otro", "Sin clasificar", "#bdc3c7")]
 TIPO_NOM = {k: n for k, n, _ in TIPOS}
 MAKS_A_TIPO = {"Pórfido Cu–Mo–Au": "porfido", "Epitermal Au–Ag": "epitermal", "Óxidos de Fe–Cu–Au (IOCG)": "iocg",
-               "Óxidos de Fe–apatito (IOA)": "hierro", "Estratoligado Cu–(Ag), tipo manto": "estrato", "Veta": "veta"}
+               "Óxidos de Fe–apatito (IOA)": "hierro", "Estratoligado Cu–(Ag), tipo manto": "estrato", "Veta": "veta",
+               "Skarn": "skarn", "Brecha hidrotermal con turmalina": "hidro"}
 
 SUST = [  # símbolo, regex sobre texto sin tildes en minúscula
     ("Cu", r"\bcu\b|copper|cobre|cuprif|calcopirita|chalcopyrite|bornita|bornite|malaquita|malachite|crisocola|chrysocolla|atacamita|atacamite|calcosina|chalcocite|enargita"),
@@ -290,7 +291,7 @@ def main():
             ul = enlazar(idx, cu)
             if ul: o["ul"] = ul
             R.append(o)
-    print("Maksaev: calzadas con una base", ya, "nuevas (ubicación aproximada)", nuevos)
+    print("Maksaev: calzadas con una base", ya, "nuevas (ubicación aproximada)", nuevos, [o["n"] for o in R if o.get("ap")])
 
     con_edad = sum(1 for o in R if "mx" in o)
     completos = sum(1 for o in R if "mx" in o and o.get("t") != "otro" and (o.get("cu") or o.get("cl")))

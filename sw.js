@@ -1,6 +1,6 @@
 // Service worker de Unidades Geológicas de Chile. Solo toca cachés con prefijo "unidades-".
-const VER = 'unidades-shell-6';
-const SHELL = ['./', 'index.html', 'app.js?v=6', 'app.css?v=6', 'yac.js?v=4', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
+const VER = 'unidades-shell-7';
+const SHELL = ['./', 'index.html', 'app.js?v=7', 'app.css?v=7', 'yac.js?v=6', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
   'data/unidades.json', 'data/yacimientos.json', 'data/cartas.json', 'data/ics.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js'];

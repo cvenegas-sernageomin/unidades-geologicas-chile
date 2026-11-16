@@ -6,7 +6,7 @@ const yac = { on: true, sus: new Set(), tipos: new Set(), fuentes: new Set(), so
 let Y = [], YTIPO = {}, YVIS = [], YSEL = null, YREF = '';
 const SUST_PRINC = ['Cu', 'Au', 'Ag', 'Fe', 'Mn', 'Pb', 'Zn', 'Mo'];
 const SUST_NOM = { Cu: 'Cobre', Au: 'Oro', Ag: 'Plata', Fe: 'Hierro', Mn: 'Manganeso', Pb: 'Plomo', Zn: 'Zinc', Mo: 'Molibdeno', otros: 'Otros metálicos', nm: 'No metálicos' };
-const FUENTES = [['GDB', 'SERNAGEOMIN (GDB)'], ['MRDS', 'USGS MRDS'], ['Maksaev', 'Maksaev et al. 2007']];
+const FUENTES = [['GDB', 'SERNAGEOMIN (GDB)'], ['MRDS', 'USGS MRDS'], ['Maksaev', 'Maksaev y Townley (libro y apuntes)']];
 const EF_TXT = { dep: 'edad del depósito', asoc: 'edad de la roca o del evento asociado (no del depósito mismo)', cinturon: 'edad del cinturón metalogénico al que pertenece (no medida en este depósito)' };
 
 mapa.createPane('yacP'); mapa.getPane('yacP').style.zIndex = 450;
@@ -86,14 +86,14 @@ function elegirY(i, volar) {
   const r = Y[i]; YSEL = i;
   capaSel.clearLayers(); capaEnl.clearLayers();
   L.circleMarker([r.y, r.x], { interactive: false, radius: 10, color: '#111', weight: 3, fillColor: '#fff', fillOpacity: 0.25 }).addTo(capaSel);
-  if (volar) mapa.flyTo([r.y, r.x], Math.max(mapa.getZoom(), 10), { duration: 0.8 });
+  if (volar && mapa.getSize().x) mapa.flyTo([r.y, r.x], Math.max(mapa.getZoom(), 10), { duration: 0.8 });
   pintarFichaY(r);
   abrir('ficha');
 }
 function pintarFichaY(r) {
   const fila = (t, v) => v ? [el('dt', {}, t), el('dd', {}, v)] : null;
   const unidad = r.ul ? BYID[r.ul] : null;
-  const fuentes = r.fu.split(' + ').map(f => ({ GDB: 'SERNAGEOMIN, base de Recursos Minerales de las cartas', MRDS: 'USGS, Mineral Resources Data System (2012)', Maksaev: 'Maksaev et al. (2007), cap. 6' }[f] || f));
+  const fuentes = r.fu.split(' + ').map(f => ({ GDB: 'SERNAGEOMIN, base de Recursos Minerales de las cartas', MRDS: 'USGS, Mineral Resources Data System (2012)', Maksaev: 'Maksaev, Townley et al. (libro de 2007 y apuntes de los cursos)' }[f] || f));
   const hermanos = r.ul ? Y.filter(o => o.ul === r.ul).length : 0;
   poner($('#p-ficha'), el('div', { class: 'ficha' },
     el('h2', {}, r.n, el('span', { class: 'insignia auto' }, 'yacimiento')),
@@ -105,11 +105,11 @@ function pintarFichaY(r) {
       el('dt', {}, 'Tipo de yacimiento'),
       el('dd', {}, [r.to ? `${r.to}${r.fo ? ' · forma: ' + r.fo : ''}` : (r.fo ? `Forma: ${r.fo}` : 'Sin clasificación en las fuentes'), el('div', { class: 'ref' }, `Categoría en el visor: ${YTIPO[r.t]?.n || '—'}`)]),
       el('dt', {}, 'Roca de caja'),
-      el('dd', {}, r.cu || r.cl ? [r.cu ? (unidad ? el('div', {}, 'Unidad: ', el('button', { class: 'enlace', onclick: () => elegir(unidad.id, true) }, unidad.n), el('span', { class: 'ref' }, ` (en el texto: ${r.cu})`)) : el('div', {}, `Unidad: ${r.cu}`)) : null,
+      el('dd', {}, r.cu || r.cl ? [r.cu ? (unidad ? el('div', {}, 'Unidad del visor: ', el('button', { class: 'enlace', onclick: () => elegir(unidad.id, true) }, unidad.n), el('span', { class: 'ref' }, ` (en la fuente: ${r.cu})`)) : el('div', {}, `Unidad o roca encajante: ${r.cu}`)) : null,
         r.cl ? el('div', {}, `Litología: ${r.cl}`) : null] : 'Sin registro de roca de caja'),
       fila('Distrito', r.di), fila('Región', r.re?.replace(/\|/g, ', ')), fila('Tamaño', r.ta),
       el('dt', {}, 'Fuentes'), el('dd', {}, el('ul', { class: 'lista-cartas' }, fuentes.map(f => el('li', {}, f)))),
-      r.mk ? [el('dt', {}, 'Referencia'), el('dd', {}, `${YREF}; págs. ${r.mk}.`)] : null,
+      r.mk ? [el('dt', {}, 'Referencia de la edad y la roca de caja'), el('dd', {}, r.mk + '.')] : null,
       r.ap ? [el('dt', {}, 'Ubicación'), el('dd', {}, 'Aproximada (centro del distrito): no calzó con ningún registro de las bases.')] : null,
       hermanos > 1 ? [el('dt', {}, 'Misma roca de caja'), el('dd', {}, el('button', { class: 'enlace', onclick: () => verYacDe(r.ul) }, `Ver los ${fmt(hermanos)} yacimientos de ${unidad.n}`))] : null),
     el('div', { class: 'fila-btns' }, el('button', { class: 'btn', onclick: () => mapa.flyTo([r.y, r.x], Math.max(mapa.getZoom(), 11)) }, 'Ver en el mapa'),
