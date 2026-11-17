@@ -1,13 +1,13 @@
 /* Capa de yacimientos: edad del depósito, tipo de yacimiento y roca de caja (unidad geológica del visor).
    Datos: data/yacimientos.json, generados por tools/armar_yacimientos.py desde SERNAGEOMIN (GDB), USGS MRDS y la tabla de
-   edades de Maksaev et al. (2007). Se carga después de app.js y usa sus funciones (mapa, filtro, elegir, abrir…). */
+   edades de Maksaev et al. (2007) y de Camus (2003). Se carga después de app.js y usa sus funciones (mapa, filtro, elegir, abrir…). */
 'use strict';
 const yac = { on: true, sus: new Set(), tipos: new Set(), fuentes: new Set(), soloEdad: true, soloCaja: false, usarEdades: true, q: '', ul: null, color: 'tipo', lim: 60 };
 let Y = [], YTIPO = {}, YVIS = [], YSEL = null, YREF = '';
 const SUST_PRINC = ['Cu', 'Au', 'Ag', 'Fe', 'Mn', 'Pb', 'Zn', 'Mo'];
 const SUST_NOM = { Cu: 'Cobre', Au: 'Oro', Ag: 'Plata', Fe: 'Hierro', Mn: 'Manganeso', Pb: 'Plomo', Zn: 'Zinc', Mo: 'Molibdeno', otros: 'Otros metálicos', nm: 'No metálicos' };
-const FUENTES = [['GDB', 'SERNAGEOMIN (GDB)'], ['MRDS', 'USGS MRDS'], ['Maksaev', 'Maksaev y Townley (libro y apuntes)']];
-const EF_TXT = { dep: 'edad del depósito', asoc: 'edad de la roca o del evento asociado (no del depósito mismo)', cinturon: 'edad del cinturón metalogénico al que pertenece (no medida en este depósito)' };
+const FUENTES = [['GDB', 'SERNAGEOMIN (GDB)'], ['MRDS', 'USGS MRDS'], ['Maksaev', 'Maksaev y Townley (libro y apuntes)'], ['Camus', 'Camus (2003), sistemas porfíricos']];
+const EF_TXT = { dep: 'edad del depósito', asoc: 'edad de la roca o del evento asociado (no del depósito mismo)', cinturon: 'edad del cinturón metalogénico al que pertenece (no medida en este depósito)', sup: 'edad supérgena: de la formación del depósito exótico, no de un pórfido' };
 
 mapa.createPane('yacP'); mapa.getPane('yacP').style.zIndex = 450;
 const rendY = L.canvas({ pane: 'yacP', padding: 0.3, tolerance: 5 });
@@ -69,7 +69,7 @@ function pintarYacPanel() {
   poner($('#y-f-sus'), [...SUST_PRINC, 'otros', 'nm'].map(k => chipY(yac.sus, k, `${SUST_NOM[k]}${SUST_PRINC.includes(k) ? ' (' + k + ')' : ''}`, null, cS.get(k) || 0)));
   poner($('#y-f-tipo'), Object.entries(YTIPO).map(([k, t]) => chipY(yac.tipos, k, t.n, t.c, cT.get(k) || 0)));
   poner($('#y-f-fu'), FUENTES.map(([k, n]) => chipY(yac.fuentes, k, n, null, cF.get(k) || 0)));
-  const orden = [...YVIS].sort((a, b) => (b.fu.includes('Maksaev') - a.fu.includes('Maksaev')) || (!!b.ul - !!a.ul) || ((b.mx != null) - (a.mx != null)) || a.n.localeCompare(b.n, 'es'));
+  const orden = [...YVIS].sort((a, b) => ((/Maksaev|Camus/.test(b.fu)) - (/Maksaev|Camus/.test(a.fu))) || (!!b.ul - !!a.ul) || ((b.mx != null) - (a.mx != null)) || a.n.localeCompare(b.n, 'es'));
   $('#y-lista-titulo').textContent = `Yacimientos (${fmt(YVIS.length)})`;
   poner($('#y-lista'), orden.slice(0, yac.lim).map(r => el('li', { onclick: () => elegirY(r.i, true) },
     el('i', { style: `background:${colorY(r)}` }),
@@ -93,7 +93,7 @@ function elegirY(i, volar) {
 function pintarFichaY(r) {
   const fila = (t, v) => v ? [el('dt', {}, t), el('dd', {}, v)] : null;
   const unidad = r.ul ? BYID[r.ul] : null;
-  const fuentes = r.fu.split(' + ').map(f => ({ GDB: 'SERNAGEOMIN, base de Recursos Minerales de las cartas', MRDS: 'USGS, Mineral Resources Data System (2012)', Maksaev: 'Maksaev, Townley et al. (libro de 2007 y apuntes de los cursos)' }[f] || f));
+  const fuentes = r.fu.split(' + ').map(f => ({ GDB: 'SERNAGEOMIN, base de Recursos Minerales de las cartas', MRDS: 'USGS, Mineral Resources Data System (2012)', Maksaev: 'Maksaev, Townley et al. (libro de 2007 y apuntes de los cursos)', Camus: 'Camus (2003), Geología de los sistemas porfíricos en los Andes de Chile (SERNAGEOMIN)' }[f] || f));
   const hermanos = r.ul ? Y.filter(o => o.ul === r.ul).length : 0;
   poner($('#p-ficha'), el('div', { class: 'ficha' },
     el('h2', {}, r.n, el('span', { class: 'insignia auto' }, 'yacimiento')),
@@ -109,7 +109,7 @@ function pintarFichaY(r) {
         r.cl ? el('div', {}, `Litología: ${r.cl}`) : null] : 'Sin registro de roca de caja'),
       fila('Distrito', r.di), fila('Región', r.re?.replace(/\|/g, ', ')), fila('Tamaño', r.ta),
       el('dt', {}, 'Fuentes'), el('dd', {}, el('ul', { class: 'lista-cartas' }, fuentes.map(f => el('li', {}, f)))),
-      r.mk ? [el('dt', {}, 'Referencia de la edad y la roca de caja'), el('dd', {}, r.mk + '.')] : null,
+      r.mk || r.ca ? [el('dt', {}, 'Referencia de la edad y la roca de caja'), el('dd', {}, [r.ca ? el('div', {}, r.ca + '.') : null, r.mk ? el('div', {}, r.mk + '.') : null])] : null,
       r.ap ? [el('dt', {}, 'Ubicación'), el('dd', {}, 'Aproximada (centro del distrito): no calzó con ningún registro de las bases.')] : null,
       hermanos > 1 ? [el('dt', {}, 'Misma roca de caja'), el('dd', {}, el('button', { class: 'enlace', onclick: () => verYacDe(r.ul) }, `Ver los ${fmt(hermanos)} yacimientos de ${unidad.n}`))] : null),
     el('div', { class: 'fila-btns' }, el('button', { class: 'btn', onclick: () => mapa.flyTo([r.y, r.x], Math.max(mapa.getZoom(), 11)) }, 'Ver en el mapa'),

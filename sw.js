@@ -1,6 +1,6 @@
 // Service worker de Unidades Geológicas de Chile. Solo toca cachés con prefijo "unidades-".
-const VER = 'unidades-shell-8';
-const SHELL = ['./', 'index.html', 'app.js?v=8', 'app.css?v=8', 'yac.js?v=8', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
+const VER = 'unidades-shell-9';
+const SHELL = ['./', 'index.html', 'app.js?v=9', 'app.css?v=9', 'yac.js?v=9', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
   'data/unidades.json', 'data/yacimientos.json', 'data/cartas.json', 'data/ics.json', 'data/pol_lejos.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
 // data/pol_cerca.json (4 MB) NO va en la instalación: se guarda la primera vez que se pide (regla de /data/ más abajo)

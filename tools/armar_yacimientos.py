@@ -4,6 +4,8 @@ Tres fuentes (cada registro dice de cuál viene):
   GDB     — SERNAGEOMIN: Recursos Minerales de las cartas, 8.100 yacimientos ya cargados en GeoChile (datos/yacimientos.json).
   MRDS    — USGS Mineral Resources Data System (2012, selección de Chile, dominio público): tipo y roca de caja, sin edad.
   Maksaev — edades y rocas de caja citadas en Maksaev et al. (2007), cap. 6 (tools/yac_maksaev.py, armado a mano).
+  Camus   — edades, unidades de caja y litología de Camus (2003), «Geología de los sistemas porfíricos en los Andes de Chile»
+            (tools/yac_camus.py, extraído del OCR del libro con la frase de cada edad). Va al final: completa o precisa lo anterior.
 Una GDB y un MRDS a menos de ~800 m son el mismo yacimiento: se funden y el MRDS solo completa lo que falta.
 
 Uso: python tools/armar_yacimientos.py
@@ -15,6 +17,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 import armar_datos as A  # noqa: E402  (parse_edad, clave_es, limpiar_nombre, nrm, constantes de ruta)
 from yac_maksaev import FILAS, REF  # noqa: E402
+from yac_camus import FILAS as FILAS_CAMUS, REF as REF_CAMUS  # noqa: E402
 
 RAIZ, PROY = A.RAIZ, A.PROY
 GDB_YAC = os.path.join(PROY, "Geo_Repo_Maule_Sernageomin", "datos", "yacimientos.json")
@@ -31,7 +34,7 @@ TIPOS = [
     ("porfido", "Pórfido Cu–Mo–Au", "#c0392b"), ("epitermal", "Epitermal Au–Ag", "#f1c40f"), ("iocg", "Óxidos de Fe–Cu–Au (IOCG)", "#8e44ad"),
     ("hierro", "Hierro (óxidos de Fe, IOA)", "#7f8c8d"), ("estrato", "Estratoligado / manto de Cu–(Ag)", "#e67e22"), ("veta", "Veta", "#2980b9"),
     ("skarn", "Skarn", "#16a085"), ("placer", "Placer", "#d4ac0d"), ("sedim", "Sedimentario, evaporita", "#95a5a6"),
-    ("magm", "Magmático, pegmatítico", "#e84393"), ("metam", "Metamórfico", "#27ae60"), ("hidro", "Hidrotermal sin precisar", "#34495e"),
+    ("exotico", "Exótico de Cu (supérgeno)", "#2ecc71"), ("magm", "Magmático, pegmatítico", "#e84393"), ("metam", "Metamórfico", "#27ae60"), ("hidro", "Hidrotermal sin precisar", "#34495e"),
     ("otro", "Sin clasificar", "#bdc3c7")]
 TIPO_NOM = {k: n for k, n, _ in TIPOS}
 MAKS_A_TIPO = {"Pórfido Cu–Mo–Au": "porfido", "Epitermal Au–Ag": "epitermal", "Óxidos de Fe–Cu–Au (IOCG)": "iocg",
@@ -293,12 +296,55 @@ def main():
             R.append(o)
     print("Maksaev: calzadas con una base", ya, "nuevas (ubicación aproximada)", nuevos, [o["n"] for o in R if o.get("ap")])
 
+
+    # --- Camus (2003): precisa edad y roca de caja; manda sobre Maksaev salvo que su edad sea de menor rango (asoc < dep)
+    RANGO = {"dep": 3, "sup": 2, "asoc": 2, "cinturon": 1, None: 0}
+    ya, nuevos = 0, 0
+    for (n, alias, lat, lon, tipo, sus, mx, mn, et, ef, cu, cl, pp, cita) in FILAS_CAMUS:
+        mejor, dm = None, 9
+        for o in R:
+            if abs(o["y"] - lat) > TOL_MAKS or abs(o["x"] - lon) > TOL_MAKS: continue
+            nn = nrm(o["n"])
+            if not any(re.search(r"\b" + re.escape(nrm(a)) + r"\b", nn) for a in alias): continue
+            d = math.hypot(o["y"] - lat, o["x"] - lon) - (0.5 if "Maksaev" in o["fu"] else 0)
+            if d < dm: mejor, dm = o, d
+        cita_txt = f"Camus (2003), págs. {pp}"
+        if mejor is None:
+            nuevos += 1
+            o = {"n": n, "x": lon, "y": lat, "s": sus, "t": tipo or "porfido", "fu": "Camus", "ap": 1}
+            R.append(o)
+        else:
+            ya += 1
+            o = mejor
+            o["fu"] = o["fu"] + " + Camus"
+            o["n"] = n if len(nrm(n)) >= len(nrm(o["n"])) else o["n"]
+            if sus: o["s"] = sorted(set(o.get("s") or []) | set(sus))
+        o["ca"] = cita_txt
+        if tipo: o["t"] = tipo
+        if mx is not None:
+            # las edades de las figuras de las fajas (cap. 3, págs. < 127) son redondeadas: no pisan una edad del depósito ya medida
+            de_figura = all(int(x) < 127 for x in re.findall(r"\d+", pp))
+            if "mx" not in o or (RANGO.get(ef, 0) >= RANGO.get(o.get("ef"), 0) and not (de_figura and o.get("ef") == "dep")):
+                previo = o.get("ed")
+                o["mx"], o["mn"], o["ef"] = mx, mn, ef
+                o["ed"] = f"Camus (2003): {et}" + (f" · Otras fuentes: {previo}" if previo else "")
+            else:
+                o["ed"] = f"{o['ed']} · Camus (2003): {et}"
+        partes = [p.strip() for p in re.split(r";", cu or "") if p.strip()]
+        if partes:
+            o["cu"] = cu
+            for p in partes:
+                ul = enlazar(idx, re.sub(r"\s*\(.*?\)", "", p))
+                if ul: o["ul"] = ul; break
+        if cl: o["cl"] = cl
+    print("Camus: calzadas", ya, "nuevas", nuevos)
+
     con_edad = sum(1 for o in R if "mx" in o)
     completos = sum(1 for o in R if "mx" in o and o.get("t") != "otro" and (o.get("cu") or o.get("cl")))
     print("registros", len(R), "con edad", con_edad, "con edad+tipo+caja", completos, "con unidad enlazada", sum(1 for o in R if "ul" in o))
     print("por fuente", collections.Counter(o["fu"] for o in R))
     print("por tipo", collections.Counter(o["t"] for o in R).most_common())
-    out = {"generado": datetime.date.today().isoformat(), "ref_maksaev": REF, "tipos": [[k, n, c] for k, n, c in TIPOS], "r": R}
+    out = {"generado": datetime.date.today().isoformat(), "ref_maksaev": REF, "ref_camus": REF_CAMUS, "tipos": [[k, n, c] for k, n, c in TIPOS], "r": R}
     p = os.path.join(RAIZ, "data", "yacimientos.json")
     json.dump(out, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print("yacimientos.json", round(os.path.getsize(p) / 1e6, 2), "MB")
