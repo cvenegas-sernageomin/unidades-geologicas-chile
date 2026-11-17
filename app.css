@@ -138,19 +138,25 @@ h3 small { text-transform: none; letter-spacing: 0; font-weight: 400 }
 .leaflet-popup-content button.enlace { display: block; text-align: left; margin: 3px 0 }
 .etiqueta-u { font-weight: 600 }
 
-/* teléfono: el panel es una hoja inferior */
+/* teléfono: el panel es una hoja inferior con tres alturas (peek / media / alta; altoHoja() en app.js usa las mismas).
+   El mapa termina donde empieza la hoja en «peek»: lo que se encuadra no queda detrás de ella. */
 @media (max-width: 760px) {
-  :root { --panel-w: 0px }
-  #mapa { right: 0; bottom: 0 }
+  :root { --panel-w: 0px; --hoja-peek: 240px; --hoja-h: var(--hoja-peek) }
+  body[data-hoja="media"] { --hoja-h: 55vh }
+  body[data-hoja="alta"] { --hoja-h: 88vh }
+  #mapa { right: 0; bottom: var(--hoja-peek) }
   #barra { width: calc(100vw - 20px) }
-  #panel { top: auto; left: 0; width: 100%; height: 52vh; border-left: 0; border-top: 1px solid var(--borde);
+  #panel { top: auto; left: 0; width: 100%; height: var(--hoja-h); border-left: 0; border-top: 1px solid var(--borde);
     border-radius: 16px 16px 0 0; box-shadow: var(--sombra); transition: height .25s }
-  #panel.min { height: 108px }
-  #asa { display: block; border: 0; background: none; padding: 6px 0 2px; flex: none }
-  #asa span { display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--borde); margin: 0 auto }
-  #leyenda { bottom: calc(52vh + 10px); max-height: 25vh }
-  #panel.min ~ #leyenda, body.panel-min #leyenda { bottom: 118px }
+  #asa { display: block; border: 0; background: none; padding: 8px 0 6px; flex: none; touch-action: none; width: 100% }
+  #asa span { display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--texto-2); opacity: .5; margin: 0 auto }
+  /* los controles de abajo del mapa (zoom, atribución) suben con la hoja */
+  .leaflet-bottom { transition: transform .25s; transform: translateY(calc(var(--hoja-peek) - var(--hoja-h))) }
+  #leyenda { bottom: calc(var(--hoja-h) + 10px); max-height: 25vh; transition: bottom .25s }
+  body[data-hoja="alta"] #leyenda, body[data-hoja="alta"] #avisos-mapa { display: none }
+  #aviso { bottom: calc(var(--hoja-h) + 12px); left: 10px; right: 10px; transform: none; max-width: none }
   #reloj { transform: translateX(-50%) }
+  .barra-pag { margin-top: 4px }
 }
 .edades-elegidas { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 6px }
 .edades-elegidas .chip { padding: 2px 4px 2px 10px; font-weight: 600 }
@@ -209,6 +215,81 @@ h3 small { text-transform: none; letter-spacing: 0; font-weight: 400 }
 .lt-geo { margin-top: 4px }
 @media (max-width: 760px) {
   .ctl-capas { margin-top: 58px !important }
-  #capas { max-height: calc(48vh - 130px); overflow: auto }
-  body.panel-min #capas { max-height: calc(100vh - 250px) }
+  #capas { max-height: calc(100vh - var(--hoja-h) - 130px); overflow: auto }
+}
+
+/* ---- shell-10: lista antes que filtros, filtros activos, unidad abierta, avisos ---- */
+.barra-pag { display: flex; align-items: center; gap: 10px; margin-top: 10px; position: sticky; top: 0; z-index: 3;
+  background: var(--superficie); padding: 6px 0; border-bottom: 1px solid var(--borde) }
+.btn-filtros { flex: none; font-weight: 600 }
+.btn-filtros[aria-expanded="true"] { background: var(--acento); border-color: var(--acento); color: #fff }
+.resumen-corto { flex: 1; min-width: 0; font-size: .85rem; color: var(--texto-2); line-height: 1.25 }
+.resumen-corto b { font-size: 1.1rem; color: var(--acento) }
+.activos { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 8px 0 2px }
+.activos .chip { padding: 2px 4px 2px 10px; font-weight: 600 }
+.pag .filtros-zona { display: none }
+.pag.con-filtros .filtros-zona { display: block }
+.pag.con-filtros .lista-zona, .pag.con-filtros .activos { display: none !important }
+.pie-filtros { position: sticky; bottom: -30px; display: flex; gap: 8px; justify-content: space-between; margin: 16px -14px -30px;
+  padding: 10px 14px 14px; background: var(--superficie); border-top: 1px solid var(--borde) }
+.pie-filtros .primario { flex: 1 }
+.lista-zona { margin-top: 6px }
+.lista-zona .buscar-panel { margin: 4px 0 6px }
+/* unidad abierta, fija arriba de la lista */
+.abierta { margin: 8px 0 4px; padding: 8px 10px; border: 2px solid var(--acento); border-radius: 10px; background: var(--superficie-2) }
+.abierta .fila-btns { margin: 6px 0 0 }
+.ab-tit { display: flex; align-items: center; gap: 8px; font-weight: 700 }
+.ab-tit i { width: 12px; height: 12px; border-radius: 3px; flex: none; border: 1px solid rgba(0, 0, 0, .3) }
+.ab-tit span { flex: 1; min-width: 0 }
+.ab-tit small { display: block; font-weight: 400; font-size: .72rem; color: var(--texto-2); text-transform: uppercase; letter-spacing: .04em }
+#lista li em.rev { color: #2f7d4f; font-weight: 600 }
+.vacio { display: block !important; cursor: default !important; padding: 16px 6px !important; font-size: .9rem }
+.vacio div { margin-top: 6px; color: var(--texto-2) }
+.vacio:hover { background: none !important }
+/* ficha */
+.ficha-nav { position: sticky; top: 0; z-index: 3; background: var(--superficie); padding: 8px 0 6px; border-bottom: 1px solid var(--borde) }
+.btn.on { background: var(--acento); border-color: var(--acento); color: #fff; font-weight: 600 }
+.mas-datos { margin-top: 14px }
+.mas-datos dl { margin-bottom: 4px }
+.escala-edad { position: relative; height: 14px; font-size: .68rem; color: var(--texto-2) }
+.escala-edad span { position: absolute; top: 1px; transform: translateX(-50%); white-space: nowrap }
+.escala-edad span:first-child { transform: none }
+.escala-edad span:last-child { transform: translateX(-100%) }
+/* popup «¿qué hay aquí?» */
+.pop-carta { margin-top: 6px }
+.pop-carta summary { cursor: pointer; color: var(--acento); font-weight: 600 }
+/* sobre el mapa: pistas de la primera visita, unidades fijadas y avisos */
+#avisos-mapa { position: fixed; top: 62px; left: 10px; z-index: 950; display: flex; flex-direction: column; gap: 8px;
+  width: min(380px, calc(100vw - var(--panel-w) - 80px)) }
+#bienvenida { padding: 10px 12px; font-size: .85rem }
+#bienvenida ol { margin: 0 0 8px; padding-left: 20px }
+#bienvenida li { margin: 2px 0 }
+#fijadas { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px; font-size: .85rem; align-self: flex-start }
+#fijadas b { color: var(--acento) }
+#fijadas .quitar { border: 0; background: rgba(0, 0, 0, .12); color: inherit; border-radius: 50%; width: 26px; height: 26px; padding: 0 }
+#aviso { position: fixed; z-index: 1100; bottom: 24px; left: calc((100vw - var(--panel-w)) / 2); transform: translateX(-50%);
+  max-width: min(440px, calc(100vw - var(--panel-w) - 40px)); background: #2b2420; color: #fff; border-radius: 10px;
+  padding: 10px 14px; box-shadow: var(--sombra); display: flex; gap: 14px; align-items: center; font-size: .88rem }
+#aviso span { flex: 1 }
+#aviso .enlace { color: #ffbe8f; font-weight: 700; white-space: nowrap }
+/* yacimientos: rombos en la lista y en la leyenda, como en el mapa */
+#y-lista li i, .ley-y i { border-radius: 1px !important; transform: rotate(45deg) scale(.85) }
+/* letra un poco mayor en pestañas y texto secundario */
+#pestanas button { font-size: .74rem }
+#lista li small, #y-lista li small { font-size: .8rem }
+/* objetivos táctiles de ~40 px en pantallas táctiles */
+@media (pointer: coarse) {
+  .chip, .edad-rapida .per, #lista .fijar, .segm button, .btn, .pie-filtros .btn { min-height: 40px }
+  .chip .quitar, .edades-elegidas .quitar { width: 26px; height: 26px; line-height: 26px }
+  .edad-rapida .per { padding: 6px 9px; align-items: center }
+  #lista .fijar { padding: 0 11px }
+  .chk { min-height: 36px }
+  .chk input { width: 20px; height: 20px }
+}
+@media (max-width: 760px) {
+  /* pestañas más bajas: en «peek» caben el resumen y dos filas de la lista */
+  #pestanas button { padding: 2px 0 3px; gap: 0 }
+  #pestanas button i { font-size: .95rem }
+  .barra-pag { margin-top: 0; padding: 3px 0 }
+  #lista li { padding: 5px 4px }
 }

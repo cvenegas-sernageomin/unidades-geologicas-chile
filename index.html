@@ -10,7 +10,7 @@
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=9">
+<link rel="stylesheet" href="app.css?v=10">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -23,6 +23,8 @@
 </div>
 
 <div id="leyenda" class="tarjeta"></div>
+<div id="avisos-mapa"></div>
+<div id="aviso" role="status" aria-live="polite" hidden></div>
 <div id="reloj" class="tarjeta" hidden>
   <button id="reloj-pausa" class="btn-ico" title="Pausar">⏸</button>
   <div><b id="reloj-nombre"></b><small id="reloj-ma"></small></div>
@@ -40,17 +42,19 @@
   </nav>
   <div id="cuerpo">
     <section id="p-unidades" class="pag on">
-      <div class="resumen" id="resumen"></div>
-      <div id="en-mapa" class="en-mapa" hidden></div>
-      <h3>Edad <small>(toca uno o varios períodos)</small></h3>
-      <div id="edad-rapida" class="edad-rapida"></div>
-      <div id="edad-elegidas" class="edades-elegidas" hidden></div>
-      <details id="d-edad" class="pleg">
-        <summary>Tabla cronoestratigráfica completa <small>(series y pisos)</small></summary>
-        <div id="tabla-edad"></div>
-      </details>
-      <details id="d-filtros" class="pleg">
-        <summary>Tipo, litología y más filtros<small id="n-filtros"></small></summary>
+      <div class="barra-pag">
+        <button class="btn btn-filtros" data-filtros="p-unidades" aria-expanded="false">Filtros<span class="n-filtros" id="n-filtros"></span> ▾</button>
+        <div class="resumen-corto" id="resumen"></div>
+      </div>
+      <div id="activos" class="activos" hidden></div>
+      <div class="filtros-zona">
+        <h3>Edad <small>(elige uno o varios períodos)</small></h3>
+        <div id="edad-rapida" class="edad-rapida"></div>
+        <details id="d-edad" class="pleg">
+          <summary>Tabla cronoestratigráfica completa <small>(series y pisos)</small></summary>
+          <div id="tabla-edad"></div>
+        </details>
+        <div class="fila-btns"><button class="btn" id="maquina">▶ Máquina del tiempo</button></div>
         <h3>Tipo de unidad</h3>
         <div class="chips" id="f-tipo"></div>
         <h3>Litología <small>(cualquiera de las elegidas)</small></h3>
@@ -59,49 +63,58 @@
         <div class="segm" id="f-amb"><button data-a="" class="on">Todos</button><button data-a="marino">Marino</button><button data-a="continental">Continental</button></div>
         <h3>Más filtros</h3>
         <label class="chk"><input type="checkbox" id="f-rev"> Solo las revisadas a mano</label>
-        <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen polígonos en las GDB</label>
+        <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen polígonos cartografiados</label>
         <label class="chk"><input type="checkbox" id="f-gen"> Incluir depósitos e intrusivos sin nombre propio</label>
-      </details>
-      <h3>Color de los símbolos</h3>
-      <div class="segm" id="color-por">
-        <button data-c="edad" class="on">Edad</button><button data-c="lito">Litología</button><button data-c="tipo">Tipo</button>
+        <h3>Color de los símbolos</h3>
+        <div class="segm" id="color-por">
+          <button data-c="edad" class="on">Edad</button><button data-c="lito">Litología</button><button data-c="tipo">Tipo</button>
+        </div>
+        <div class="pie-filtros"><button class="btn" id="limpiar">Quitar filtros</button><button class="btn primario" data-cerrar="p-unidades" id="ver-n">Ver unidades</button></div>
       </div>
-      <div class="fila-btns"><button class="btn" id="limpiar">Quitar filtros</button><button class="btn" id="maquina">▶ Máquina del tiempo</button></div>
-      <h3 id="lista-titulo">Unidades</h3>
-      <ol id="lista"></ol>
+      <div class="lista-zona">
+        <div id="en-mapa" class="en-mapa" hidden></div>
+        <div id="abierta" hidden></div>
+        <ol id="lista"></ol>
+      </div>
     </section>
     <section id="p-yac" class="pag">
-      <div class="resumen" id="y-resumen"></div>
-      <label class="chk"><input type="checkbox" id="y-on" checked> Mostrar los yacimientos en el mapa</label>
-      <p class="nota" id="y-leyenda-nota">Un punto por yacimiento: tipo, edad del depósito y roca de caja. Toca un punto para ver su ficha; la roca de caja se enlaza con la unidad del visor.</p>
-      <h3>Color de los puntos</h3>
-      <div class="segm" id="y-color"><button data-c="tipo" class="on">Tipo</button><button data-c="edad">Edad</button></div>
-      <div id="y-leyenda" class="ley-yac"></div>
-      <h3>Buscar</h3>
-      <label class="buscar buscar-panel"><span aria-hidden="true">🔎</span><input id="y-q" type="search" placeholder="Nombre, distrito, unidad de caja…" autocomplete="off" spellcheck="false"></label>
-      <h3>Sustancia</h3>
-      <div class="chips" id="y-f-sus"></div>
-      <h3>Tipo de yacimiento</h3>
-      <div class="chips" id="y-f-tipo"></div>
-      <h3>Fuente</h3>
-      <div class="chips" id="y-f-fu"></div>
-      <h3>Más filtros</h3>
-      <label class="chk"><input type="checkbox" id="y-soloedad" checked> Solo con registro de edad del depósito</label>
-      <label class="chk"><input type="checkbox" id="y-solocaja"> Solo con roca de caja registrada</label>
-      <label class="chk"><input type="checkbox" id="y-usaredades" checked> Usar las edades elegidas en la pestaña «Unidades»</label>
-      <div class="fila-btns"><button class="btn" id="y-limpiar">Quitar filtros</button></div>
-      <p class="nota" id="y-fecha"></p>
-      <h3 id="y-lista-titulo">Yacimientos</h3>
-      <ol id="y-lista"></ol>
+      <div class="barra-pag">
+        <button class="btn btn-filtros" data-filtros="p-yac" aria-expanded="false">Filtros<span class="n-filtros" id="y-n-filtros"></span> ▾</button>
+        <div class="resumen-corto" id="y-resumen"></div>
+      </div>
+      <div id="y-activos" class="activos" hidden></div>
+      <div class="filtros-zona">
+        <h3>Color de los puntos</h3>
+        <div class="segm" id="y-color"><button data-c="tipo" class="on">Tipo</button><button data-c="edad">Edad</button></div>
+        <div id="y-leyenda" class="ley-yac"></div>
+        <h3>Sustancia</h3>
+        <div class="chips" id="y-f-sus"></div>
+        <h3>Tipo de yacimiento</h3>
+        <div class="chips" id="y-f-tipo"></div>
+        <h3>Fuente</h3>
+        <div class="chips" id="y-f-fu"></div>
+        <h3>Más filtros</h3>
+        <label class="chk"><input type="checkbox" id="y-soloedad" checked> Solo con registro de edad del depósito</label>
+        <label class="chk"><input type="checkbox" id="y-solocaja"> Solo con roca de caja registrada</label>
+        <label class="chk"><input type="checkbox" id="y-usaredades" checked> Usar las edades elegidas en la pestaña «Unidades»</label>
+        <p class="nota" id="y-fecha"></p>
+        <div class="pie-filtros"><button class="btn" id="y-limpiar">Quitar filtros</button><button class="btn primario" data-cerrar="p-yac" id="y-ver-n">Ver yacimientos</button></div>
+      </div>
+      <div class="lista-zona">
+        <label class="buscar buscar-panel"><span aria-hidden="true">🔎</span><input id="y-q" type="search" placeholder="Nombre, distrito, unidad de caja…" autocomplete="off" spellcheck="false"></label>
+        <label class="chk"><input type="checkbox" id="y-on"> Mostrar los yacimientos en el mapa <small class="nota">(rombos)</small></label>
+        <ol id="y-lista"></ol>
+        <p class="nota" id="y-leyenda-nota">Un rombo por yacimiento: tipo, edad del depósito y roca de caja. Elige uno para ver su ficha; la roca de caja se enlaza con la unidad del visor.</p>
+      </div>
     </section>
     <section id="p-perfil" class="pag">
       <p class="nota">Cada barra es una unidad: va de su edad más antigua a la más joven, a la latitud de un punto representativo
         (dentro de sus polígonos o en la carta que la describe). Así se ve cómo se distribuyen el magmatismo y la sedimentación de norte
-        a sur en el tiempo; el diagrama no muestra desplazamientos este–oeste. Respeta los filtros; toca una barra para ver la ficha.</p>
+        a sur en el tiempo; el diagrama no muestra desplazamientos este–oeste. Respeta los filtros; elige una barra para ver la ficha.</p>
       <div class="segm" id="escala-t"><button data-e="raiz" class="on">Escala de raíz cuadrada</button><button data-e="lin">Lineal</button></div>
       <div id="perfil"></div>
     </section>
-    <section id="p-ficha" class="pag"><p class="nota">Toca una unidad en el mapa o en la lista.</p></section>
+    <section id="p-ficha" class="pag"><p class="nota">Elige una unidad en el mapa o en la lista.</p></section>
     <section id="p-acerca" class="pag">
       <h2>Unidades geológicas de Chile</h2>
       <p>Formaciones, estratos, grupos, complejos, intrusivos y volcanes descritos en las <b>Cartas Geológicas de Chile</b>
@@ -119,7 +132,7 @@
         <li><b>Anillo</b>: unidades cuya localidad tipo no se pudo ubicar. Es un punto indicativo dentro de sus polígonos o de la
           carta que la describe; no es la localidad tipo.</li>
         <li><b>Polígonos</b>: unidades cartografiadas en las geodatabases (GDB) de 93 cartas, para las unidades que tú elijas
-          (botón «＋ mapa» en la lista, o al abrir su ficha). Con todo el país a la vista se dibujan generalizados (polígonos
+          (botón «＋ Polígonos» en la lista, o al abrir su ficha). Con todo el país a la vista se dibujan generalizados (polígonos
           vecinos unidos; no se conservan rasgos menores de ~1 km); al acercarse, generalizados a ~250 m. No reemplazan los
           contactos de la carta ni sirven para medir superficies. Se colorean por edad, litología o tipo: las GDB no traen el
           color de la leyenda de cada carta.</li>
@@ -147,7 +160,7 @@
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=9"></script>
-<script src="yac.js?v=9"></script>
+<script src="app.js?v=10"></script>
+<script src="yac.js?v=10"></script>
 </body>
 </html>
