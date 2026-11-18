@@ -10,7 +10,7 @@
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=10">
+<link rel="stylesheet" href="app.css?v=11">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -63,7 +63,7 @@
         <div class="segm" id="f-amb"><button data-a="" class="on">Todos</button><button data-a="marino">Marino</button><button data-a="continental">Continental</button></div>
         <h3>Más filtros</h3>
         <label class="chk"><input type="checkbox" id="f-rev"> Solo las revisadas a mano</label>
-        <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen polígonos cartografiados</label>
+        <label class="chk"><input type="checkbox" id="f-pol"> Solo las que tienen extensión cartografiada (GDB)</label>
         <label class="chk"><input type="checkbox" id="f-gen"> Incluir depósitos e intrusivos sin nombre propio</label>
         <h3>Color de los símbolos</h3>
         <div class="segm" id="color-por">
@@ -74,6 +74,16 @@
       <div class="lista-zona">
         <div id="en-mapa" class="en-mapa" hidden></div>
         <div id="abierta" hidden></div>
+        <div id="inicio" hidden>
+          <p class="ini-intro" id="ini-intro"></p>
+          <div class="puerta"><h4><span>1</span>¿De qué edad?</h4><div id="ini-edad" class="edad-rapida"></div></div>
+          <div class="puerta"><h4><span>2</span>¿De qué rocas?</h4><div id="ini-lito" class="chips"></div></div>
+          <div class="puerta"><h4><span>3</span>¿Dónde?</h4>
+            <p class="nota">Acerca el mapa a una zona y lista lo que aflora ahí, o toca un punto del mapa para ver qué hay.</p>
+            <button class="btn" id="ini-zona"></button></div>
+          <p class="nota ini-pie">Puedes combinar las tres, y afinar con «Filtros» (tipo de unidad, ambiente, revisadas).
+            <button class="enlace" id="ini-todas"></button></p>
+        </div>
         <ol id="lista"></ol>
       </div>
     </section>
@@ -131,11 +141,12 @@
           que da nombre a la unidad).</li>
         <li><b>Anillo</b>: unidades cuya localidad tipo no se pudo ubicar. Es un punto indicativo dentro de sus polígonos o de la
           carta que la describe; no es la localidad tipo.</li>
-        <li><b>Polígonos</b>: unidades cartografiadas en las geodatabases (GDB) de 93 cartas, para las unidades que tú elijas
-          (botón «＋ Polígonos» en la lista, o al abrir su ficha). Con todo el país a la vista se dibujan generalizados (polígonos
-          vecinos unidos; no se conservan rasgos menores de ~1 km); al acercarse, generalizados a ~250 m. No reemplazan los
-          contactos de la carta ni sirven para medir superficies. Se colorean por edad, litología o tipo: las GDB no traen el
-          color de la leyenda de cada carta.</li>
+        <li><b>Extensión</b>: dónde aflora cada unidad según las geodatabases (GDB) de 93 cartas, para las unidades que tú elijas
+          (botón «＋ Extensión» en la lista, o al abrir su ficha). De lejos se dibuja en celdas hexagonales (de ~45 km con todo el país a
+          la vista hasta ~3 km): la celda es más intensa cuanto más de ella cubre la unidad, y no finge un contorno que a esa escala no
+          se puede dibujar. Desde el zoom 9 se dibuja el contorno de la GDB (~40 m). El marco punteado es el límite de las cartas con
+          GDB: los bordes rectos de la unidad en ese marco son el fin de la cartografía digital, no de la unidad. Se colorea por edad,
+          litología o tipo: las GDB no traen el color de la leyenda de cada carta.</li>
         <li><b>Edad, litología, localidad tipo y correlaciones</b>: tabla <i>Unidades_geologicas_Chile.xlsx</i>. Las fichas
           marcadas «revisada a mano» se contrastaron con el texto de la carta; las demás vienen de la extracción automática.</li>
         <li><b>Edad numérica</b> (para filtrar y colorear): leída del texto de edad («Mioceno Inferior», «ca. 18,6 Ma») con la Tabla
@@ -160,7 +171,7 @@
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=10"></script>
-<script src="yac.js?v=10"></script>
+<script src="app.js?v=11"></script>
+<script src="yac.js?v=11"></script>
 </body>
 </html>

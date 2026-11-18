@@ -26,6 +26,8 @@ MANIF = os.path.join(PROY, "cartas-geologicas-sernageomin", "manifest.json")
 sys.path.insert(0, os.path.join(PROY, "RAG-Bibliografia", "tools", "unidades"))
 from parsear import limpiar_nombre  # noqa: E402
 from agregar import clave_es  # noqa: E402
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import extension  # noqa: E402
 
 TOL = 0.0025          # simplificación de polígonos (grados, ~250 m)
 AREA_MIN = 4e-6       # descarta astillas (< ~0,05 km²)
@@ -287,7 +289,7 @@ def cargar_gdb():
             if not geoms.get(ui):
                 continue
             k = clave_gdb(u["n"] or "")
-            reg = {"carta": cid, "c": u.get("c"), "mx": u.get("mx"), "mn": u.get("mn"), "lc": u.get("lc"),
+            reg = {"carta": cid, "bg": c.get("bounds"), "c": u.get("c"), "mx": u.get("mx"), "mn": u.get("mn"), "lc": u.get("lc"),
                    "lr": u.get("lr") or [], "g": geoms[ui], "n": u["n"]}
             if k and k[1]:
                 por_clave[k].append(reg)
@@ -363,6 +365,7 @@ def main():
     gdb_clave, gdb_codigo = cargar_gdb()
     wb = load_workbook(XLSX, read_only=True)
     U, POL, POL_L, usadas = [], {}, {}, set()
+    GEOM, GDB_B = {}, {}  # geometrías sin generalizar (para tools/extension.py) y marcos de las cartas con GDB
     ltf = os.path.join(RAIZ, "data", "localidades_tipo.json")
     LT = json.load(open(ltf, encoding="utf-8")) if os.path.exists(ltf) else {}
     sin_marco = collections.Counter()
@@ -414,6 +417,11 @@ def main():
             if pol:
                 POL[uid] = pol
                 POL_L[uid] = suavizar_lejos(geoms_u)
+                GEOM[uid] = geoms_u
+                for x in regs:
+                    if x.get("bg"):
+                        w, so, e, no = x["bg"]
+                        GDB_B[x["carta"]] = [so, no, w, e]
             pts = []
             for i, ci in enumerate(cids):
                 if ci in cartas:
@@ -444,6 +452,7 @@ def main():
                                     g("Resumen litológico (texto de la carta)"), lc_gdb),
                 "amb": [a for a, rx in AMBIENTES if re.search(rx, lit + " " + g("Resumen litológico (texto de la carta)"), re.I)],
                 "pts": pts, "gdb": len(regs), "gen": 1 if gen else 0, "pol": 1 if pol else 0, "na": len(pol),
+                **({"gc": sorted({x["carta"] for x in regs})} if pol else {}),
                 **({"lt": {"x": lt["x"], "y": lt["y"], "p": lt["p"], "t": lt.get("t", ""), "f": lt.get("f", ""),
                            **({"cita": lt["cita"]} if lt.get("cita") else {})}} if lt and not gen else {}),
             }
@@ -468,12 +477,16 @@ def main():
         u["enl"] = enl
     usadas_cartas = {c for u in U for c in u["cartas"]}
     C = {k: {"t": v["t"], "b": v["b"], **({"aprox": 1} if v.get("aprox") else {})} for k, v in cartas.items() if k in usadas_cartas}
+    for k, b in GDB_B.items():  # cartas con GDB que no describen la unidad en el texto: igual se necesita su marco
+        if k not in C:
+            C[k] = {"t": cartas[k]["t"] if k in cartas else k, "b": b}
     os.makedirs(os.path.join(RAIZ, "data"), exist_ok=True)
     dump = lambda o, n: json.dump(o, open(os.path.join(RAIZ, "data", n), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     dump({"generado": __import__("datetime").date.today().isoformat(), "unidades": U}, "unidades.json")
     dump(POL, "pol_cerca.json")
     dump(POL_L, "pol_lejos.json")
     dump(C, "cartas.json")
+    extension.armar(GEOM, RAIZ)
     n_pol = sum(1 for u in U if u["id"] in POL)
     n_edad = sum(1 for u in U if u["mx"] is not None)
     print(f"unidades {len(U)} | con polígono {n_pol} | con punto {sum(1 for u in U if u['pts'])} | "

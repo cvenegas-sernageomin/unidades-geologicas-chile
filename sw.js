@@ -1,9 +1,9 @@
 // Service worker de Unidades Geológicas de Chile. Solo toca cachés con prefijo "unidades-".
-const VER = 'unidades-shell-10';
-const SHELL = ['./', 'index.html', 'app.js?v=10', 'app.css?v=10', 'yac.js?v=10', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
-  'data/unidades.json', 'data/yacimientos.json', 'data/cartas.json', 'data/ics.json', 'data/pol_lejos.json',
+const VER = 'unidades-shell-11';
+const SHELL = ['./', 'index.html', 'app.js?v=11', 'app.css?v=11', 'yac.js?v=11', 'manifest.webmanifest', 'icons/icono.svg', 'icons/icono-192.png',
+  'data/unidades.json', 'data/yacimientos.json', 'data/cartas.json', 'data/ics.json', 'data/hex.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
-// data/pol_cerca.json (4 MB) NO va en la instalación: se guarda la primera vez que se pide (regla de /data/ más abajo)
+// data/pol/<id>.json (contorno detallado, hasta 1 MB c/u) NO va en la instalación: se guarda la primera vez que se pide (regla de /data/ más abajo)
 const TESELAS = 'unidades-teselas';
 
 // cache: 'reload' / 'no-cache': saltarse el caché HTTP del navegador (GitHub Pages da max-age=600). Sin esto, justo después de publicar

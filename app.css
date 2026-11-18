@@ -293,3 +293,20 @@ h3 small { text-transform: none; letter-spacing: 0; font-weight: 400 }
   .barra-pag { margin-top: 0; padding: 3px 0 }
   #lista li { padding: 5px 4px }
 }
+
+/* ---- shell-11: inicio guiado (tres puertas) en vez de la lista completa ---- */
+#inicio { margin-top: 6px }
+.ini-intro { font-size: .9rem; margin: 4px 0 10px; line-height: 1.4 }
+.ini-intro b { color: var(--acento) }
+.puerta { border: 1px solid var(--borde); border-radius: 12px; padding: 10px 12px 12px; margin-bottom: 10px; background: var(--superficie) }
+.puerta h4 { margin: 0 0 8px; font-size: .95rem; display: flex; align-items: center; gap: 8px }
+.puerta h4 span { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--acento);
+  color: #fff; font-size: .75rem; flex: none }
+.puerta .nota { margin: 0 0 8px }
+.puerta .chip { cursor: pointer; display: inline-flex; align-items: center; gap: 5px }
+#ini-zona { width: 100% }
+#ini-zona:disabled { opacity: .6; cursor: default }
+.ini-pie { margin: 2px 2px 14px }
+.ini-pie .enlace { display: block; margin-top: 6px; font-weight: 600 }
+.chip-zona { border-style: dashed; color: var(--acento); cursor: pointer; font-weight: 600 }
+@media (max-width: 760px) { .ini-intro { display: none } }
