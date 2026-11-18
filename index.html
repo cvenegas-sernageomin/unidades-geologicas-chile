@@ -10,7 +10,7 @@
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=12">
+<link rel="stylesheet" href="app.css?v=13">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -152,11 +152,11 @@
         <li><b>Anillo</b>: unidades cuya localidad tipo no se pudo ubicar. Es un punto indicativo dentro de sus polígonos o de la
           carta que la describe; no es la localidad tipo.</li>
         <li><b>Extensión</b>: dónde aflora cada unidad según las geodatabases (GDB) de 93 cartas, para las unidades que tú elijas
-          (botón «＋ Extensión» en la lista, o al abrir su ficha). De lejos se dibuja en celdas hexagonales (de ~45 km con todo el país a
-          la vista hasta ~3 km): la celda es más intensa cuanto más de ella cubre la unidad, y no finge un contorno que a esa escala no
-          se puede dibujar. Desde el zoom 9 se dibuja el contorno de la GDB (~40 m). El marco punteado es el límite de las cartas con
-          GDB: los bordes rectos de la unidad en ese marco son el fin de la cartografía digital, no de la unidad. Se colorea por edad,
-          litología o tipo: las GDB no traen el color de la leyenda de cada carta.</li>
+          (botón «＋ Extensión» en la lista, o al abrir su ficha). Se dibuja generalizada y con bordes redondeados: es la unión de
+          discos sobre una grilla que se afina al acercarse (de ~30 km con todo el país a la vista a ~600 m de cerca); el disco es
+          más grande donde la unidad cubre más de la celda. No es el contorno de la GDB: sirve para ver dónde aflora, no para ubicar
+          contactos ni medir superficies. El marco punteado es el límite de las cartas con GDB: fuera de él la unidad puede seguir
+          aflorando sin cartografía digital. Se colorea por edad, litología o tipo: las GDB no traen el color de la leyenda de cada carta.</li>
         <li><b>Edad, litología, localidad tipo y correlaciones</b>: tabla <i>Unidades_geologicas_Chile.xlsx</i>. Las fichas
           marcadas «revisada a mano» se contrastaron con el texto de la carta; las demás vienen de la extracción automática.</li>
         <li><b>Edad numérica</b> (para filtrar y colorear): leída del texto de edad («Mioceno Inferior», «ca. 18,6 Ma») con la Tabla
@@ -185,7 +185,7 @@
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=12"></script>
-<script src="yac.js?v=12"></script>
+<script src="app.js?v=13"></script>
+<script src="yac.js?v=13"></script>
 </body>
 </html>

@@ -233,12 +233,14 @@ function pintarMapa() {
 }
 
 /* ---- extensión de las unidades elegidas (y de la abierta) ----
-   De lejos: celdas hexagonales (data/hex.json) cuyo relleno dice cuánto de la celda cubre la unidad; no fingen un contorno que
-   la generalización no tiene. De cerca (zoom ≥ ZOOM_CERCA): el contorno de la GDB a ~40 m (data/pol/<id>.json, se pide al acercarse).
-   Con ambos van los marcos de las cartas con GDB: fuera de ellos la unidad puede seguir aflorando sin cartografía digital. */
+   Desde shell-13 se dibuja como unión de discos centrados en las celdas de data/hex.json (de lejos) o de data/pol/<id>.json
+   (celdas de 600 m, desde ZOOM_CERCA): bordes redondeados, sin los segmentos rectos ni los ángulos agudos de los polígonos de la
+   GDB (Carlos, 2026-11-18). El radio del disco crece con cuánto de la celda cubre la unidad (k = 1..4), así lo disperso se ve
+   como manchas sueltas y lo continuo como una sola forma. Mismo método que las franjas de yacimientos (yac.js).
+   Van con los marcos de las cartas con GDB: fuera de ellos la unidad puede seguir aflorando sin cartografía digital. */
 let HEX = null, cargandoHex = null;
-const DET = {}, cargandoDet = {};
-const ZOOM_CERCA = 9;
+const DET = {}, cargandoDet = {};  // celdas finas por unidad: { s, c: [q, r, k, …], set }
+const ZOOM_CERCA = 10;
 let elegidas = [];  // ids fijados en el mapa
 const BORDES = ['#111111', '#8a3b12', '#1f5fa8', '#2f7d4f', '#7b3fa0', '#c0392b', '#0e7c86', '#8d6e00'];
 const bordeDe = id => BORDES[Math.max(0, elegidas.indexOf(id)) % BORDES.length];
@@ -249,17 +251,15 @@ function cargarHex() {
 }
 function cargarDet(id) {
   if (DET[id]) return Promise.resolve(DET[id]);
-  return cargandoDet[id] ||= json(`data/pol/${id}.json`).then(d => (DET[id] = d)).catch(e => { delete cargandoDet[id]; throw e; });
+  return cargandoDet[id] ||= json(`data/pol/${id}.json`).then(d => {
+    d.set = new Set(); for (let i = 0; i < d.c.length; i += 3) d.set.add(d.c[i] + ',' + d.c[i + 1]);
+    return (DET[id] = d);
+  }).catch(e => { delete cargandoDet[id]; throw e; });
 }
-// tamaño de celda según el zoom: que una celda mida ~8–14 px en pantalla (índices de HEX.s = [2, 5, 12, 30] km)
+// tamaño de celda según el zoom (índices de HEX.s = [2, 5, 12, 30] km de radio); desde ZOOM_CERCA, las de 600 m
 const nivelHex = z => z < 5.5 ? 3 : z < 7 ? 2 : z < 8.5 ? 1 : 0;
 const modoExt = () => mapa.getZoom() >= ZOOM_CERCA ? 'det' : 'hex' + nivelHex(mapa.getZoom());
 const S3 = Math.sqrt(3), MERC = L.Projection.SphericalMercator;
-const ANG = [0, 1, 2, 3, 4, 5].map(i => (i * 60 + 30) * Math.PI / 180);
-function hexLatLngs(q, r, s) {
-  const cx = s * S3 * (q + r / 2), cy = 1.5 * s * r;
-  return ANG.map(a => MERC.unproject(L.point(cx + s * Math.cos(a), cy + s * Math.sin(a))));
-}
 // celda que contiene un punto (redondeo cúbico); igual que celda_de() en tools/extension.py
 function celdaDe(latlng, s) {
   const p = MERC.project(latlng), q = (S3 / 3 * p.x - p.y / 3) / s, r = (2 / 3 * p.y) / s, y = -q - r;
@@ -268,51 +268,92 @@ function celdaDe(latlng, s) {
   if (dq > dy && dq > dr) rq = -ry - rr; else if (dy <= dr) rr = -rq - ry;
   return rq + ',' + rr;
 }
-const ANCHO_KM = [3, 7, 18, 45];  // ancho de la celda a ~30° S (√3·s·cos lat)
-const OPAC_K = [0, 0.32, 0.48, 0.64, 0.8];
-const TXT_K = ['', 'menos de un cuarto', 'entre un cuarto y la mitad', 'entre la mitad y tres cuartos', 'más de tres cuartos'];
+// radio del disco / radio de la celda, según la fracción cubierta (los centros vecinos están a √3·s: con ≥ 0,9 se tocan)
+const RADIO_K = [0, 0.7, 0.9, 1.05, 1.15];
+// celdas que se dibujan para una unidad con el zoom actual (las finas mientras no llegan, las de 2 km)
+function celdasDe(u) {
+  if (modoExt() === 'det') {
+    if (DET[u.id]) return { s: DET[u.id].s, c: DET[u.id].c };
+    cargarDet(u.id).then(() => { if (modoExt() === 'det') capaExt.redibujar(); }).catch(e => console.error('celdas finas:', e));
+    return HEX?.u[u.id] ? { s: HEX.s[0], c: HEX.u[u.id][0] } : null;
+  }
+  const nv = nivelHex(mapa.getZoom());
+  return HEX?.u[u.id] ? { s: HEX.s[nv], c: HEX.u[u.id][nv] } : null;
+}
+let EXT_US = [];  // unidades a dibujar, de la más antigua a la más joven (las jóvenes encima)
+const CapaExt = L.Layer.extend({
+  onAdd(map) {
+    this._c = L.DomUtil.create('canvas', 'capa-ext leaflet-zoom-hide');
+    map.getPane('polP').appendChild(this._c);
+    map.on('moveend zoomend resize', this.redibujar, this);
+    this.redibujar();
+  },
+  onRemove(map) { this._c.remove(); map.off('moveend zoomend resize', this.redibujar, this); },
+  redibujar() {
+    const map = this._map; if (!map) return;
+    const tam = map.getSize(), dpr = window.devicePixelRatio || 1, c = this._c;
+    c.width = tam.x * dpr; c.height = tam.y * dpr; c.style.width = tam.x + 'px'; c.style.height = tam.y + 'px';
+    L.DomUtil.setPosition(c, map.containerPointToLayerPoint([0, 0]));
+    const ctx = c.getContext('2d');
+    if (!EXT_US.length) return;
+    const z = map.getZoom(), px = 256 * Math.pow(2, z) / (2 * Math.PI * 6378137);  // píxeles por metro Mercator
+    // esquina de la vista en metros Mercator, para pasar de centro de celda a píxel sin pasar por lat/lon
+    const nw = MERC.project(map.containerPointToLatLng([0, 0]));
+    // metabolas: discos → desenfoque → umbral a media opacidad. El contorno queda curvo y continuo (sin el festón de los discos)
+    const A = document.createElement('canvas'), B = document.createElement('canvas'), T = document.createElement('canvas');
+    for (const o of [A, B]) { o.width = c.width; o.height = c.height; }
+    const gA = A.getContext('2d'), gB = B.getContext('2d', { willReadFrequently: true }), gT = T.getContext('2d');
+    const hex2rgb = h => /^#[0-9a-f]{6}$/i.test(h || '') ? [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)) : [158, 158, 158];
+    for (const u of EXT_US) {
+      const cel = celdasDe(u); if (!cel) continue;
+      const fijada = elegidas.includes(u.id), color = colorDe(u), s = cel.s, margen = s * 1.2 * px;
+      const ptos = [];
+      for (let i = 0; i < cel.c.length; i += 3) {
+        const q = cel.c[i], r = cel.c[i + 1];
+        const x = (s * S3 * (q + r / 2) - nw.x) * px, y = (nw.y - 1.5 * s * r) * px;
+        if (x > -margen && y > -margen && x < tam.x + margen && y < tam.y + margen) ptos.push([x, y, Math.max(1.5, RADIO_K[cel.c[i + 2]] * s * px)]);
+      }
+      if (!ptos.length) continue;
+      // caja de trabajo en píxeles del dispositivo (solo donde hay discos)
+      const sig = Math.min(30, Math.max(1, 0.45 * s * px)), pad = 3 * sig + 4;
+      const x0 = Math.max(0, Math.floor((Math.min(...ptos.map(p => p[0] - p[2])) - pad) * dpr)), y0 = Math.max(0, Math.floor((Math.min(...ptos.map(p => p[1] - p[2])) - pad) * dpr));
+      const x1 = Math.min(c.width, Math.ceil((Math.max(...ptos.map(p => p[0] + p[2])) + pad) * dpr)), y1 = Math.min(c.height, Math.ceil((Math.max(...ptos.map(p => p[1] + p[2])) + pad) * dpr));
+      const w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0) continue;
+      gA.setTransform(dpr, 0, 0, dpr, 0, 0); gA.clearRect(0, 0, tam.x, tam.y); gA.fillStyle = '#000';
+      gA.beginPath(); for (const [x, y, rr] of ptos) { gA.moveTo(x + rr, y); gA.arc(x, y, rr, 0, 2 * Math.PI); } gA.fill();
+      gB.setTransform(1, 0, 0, 1, 0, 0); gB.clearRect(0, 0, c.width, c.height);
+      gB.filter = `blur(${(sig * dpr).toFixed(1)}px)`; gB.drawImage(A, 0, 0); gB.filter = 'none';
+      const src = gB.getImageData(x0, y0, w, h).data, out = new ImageData(w, h), o = out.data;
+      const [r0, g0, b0] = hex2rgb(color), [r1, g1, b1] = hex2rgb(fijada ? bordeDe(u.id) : '#111111');
+      const aF = Math.round(255 * (fijada || !elegidas.length ? 0.55 : 0.35)), bw = Math.max(1, Math.round((u.id === sel ? 2.2 : 1.4) * dpr));
+      const dentroP = (x, y) => x >= 0 && y >= 0 && x < w && y < h && src[(y * w + x) * 4 + 3] >= 128;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        if (src[i + 3] < 128) continue;
+        const enBorde = !dentroP(x - bw, y) || !dentroP(x + bw, y) || !dentroP(x, y - bw) || !dentroP(x, y + bw);
+        if (enBorde) { o[i] = r1; o[i + 1] = g1; o[i + 2] = b1; o[i + 3] = 230; } else { o[i] = r0; o[i + 1] = g0; o[i + 2] = b0; o[i + 3] = aF; }
+      }
+      T.width = w; T.height = h; gT.putImageData(out, 0, 0);
+      ctx.drawImage(T, x0, y0);
+    }
+  } });
+const capaExt = new CapaExt();
+capaPol.addLayer(capaExt);  // va y viene con la capa «Extensión» del control de capas
 let modoDibujado = null;
 function pintarPol() {
-  capaPol.clearLayers();
-  const us = [...new Set([...elegidas, ...(sel ? [sel] : [])])].map(id => BYID[id]).filter(u => u?.pol);
+  capaPol.eachLayer(l => { if (l !== capaExt) capaPol.removeLayer(l); });
+  EXT_US = [...new Set([...elegidas, ...(sel ? [sel] : [])])].map(id => BYID[id]).filter(u => u?.pol).sort((a, b) => (b.mx ?? 0) - (a.mx ?? 0));
   modoDibujado = modoExt();
-  if (!us.length) return;
-  if (!HEX) { cargarHex().then(pintarPol).catch(e => console.error('celdas:', e)); return; }
+  if (EXT_US.length && !HEX) { cargarHex().then(pintarPol).catch(e => console.error('celdas:', e)); return; }
   // marcos de las cartas donde está cartografiada (límite de la información, no de la unidad)
-  const marcos = new Set(us.flatMap(u => u.gc || []));
+  const marcos = new Set(EXT_US.flatMap(u => u.gc || []));
   for (const c of marcos) if (CARTAS[c]) {
     const [s, n, w, e] = CARTAS[c].b;
     L.rectangle([[s, w], [n, e]], { renderer: rendPol, pane: 'polP', color: '#5b4f47', weight: 1, opacity: 0.55, dashArray: '3 4', fill: false, interactive: false }).addTo(capaPol);
   }
-  const det = modoDibujado === 'det';
-  // las más antiguas abajo
-  for (const u of us.sort((a, b) => (b.mx ?? 0) - (a.mx ?? 0))) {
-    const fijada = elegidas.includes(u.id), color = colorDe(u), borde = fijada ? bordeDe(u.id) : '#111';
-    const alClic = ev => { L.DomEvent.stop(ev); elegir(u.id, false); };
-    if (det && !DET[u.id]) cargarDet(u.id).then(() => { if (modoExt() === 'det') pintarPol(); }).catch(e => console.error('contorno:', e));
-    if (det && DET[u.id]) {
-      const pol = L.polygon(DET[u.id].map(anillos => anillos.map(a => a.map(([x, y]) => [y, x]))), { renderer: rendPol, pane: 'polP',
-        color: borde, weight: u.id === sel ? 2 : 1.2, dashArray: fijada ? null : '5 4', fillColor: color, fillOpacity: 0.5 });
-      pol.on('click', alClic).bindTooltip(u.n, { sticky: true, className: 'etiqueta-u' });
-      capaPol.addLayer(pol);
-      continue;
-    }
-    // celdas (también mientras llega el contorno detallado)
-    const nv = det ? 0 : nivelHex(mapa.getZoom()), s = HEX.s[nv], c = HEX.u[u.id]?.[nv];
-    if (!c) continue;
-    const porK = [[], [], [], [], []];
-    for (let i = 0; i < c.length; i += 3) porK[c[i + 2]].push([hexLatLngs(c[i], c[i + 1], s)]);
-    porK.forEach((anillos, k) => {
-      if (!anillos.length) return;
-      const pol = L.polygon(anillos, { renderer: rendPol, pane: 'polP', color: fijada ? borde : '#fff', weight: fijada ? 0.7 : 0.6, opacity: 0.9,
-        fillColor: color, fillOpacity: OPAC_K[k] * (fijada || !elegidas.length ? 1 : 0.7) });
-      pol.on('click', alClic).bindTooltip(`${u.n} · la unidad cubre ${TXT_K[k]} de la celda (celda de ~${ANCHO_KM[nv]} km)`, { sticky: true, className: 'etiqueta-u' });
-      capaPol.addLayer(pol);
-    });
-  }
+  capaExt.redibujar();
 }
-mapa.on('zoomend', () => { if (modoExt() !== modoDibujado) pintarPol(); });
-// ¿qué unidades cubren este punto? celdas de 2 km; si su contorno detallado está cargado, ese manda
+// ¿qué unidades cubren este punto? celdas de 2 km; si ya están las de 600 m de esa unidad, mandan esas
 let IDX_HEX = null;
 function unidadesEn(latlng) {
   if (!HEX) return [];
@@ -324,8 +365,8 @@ function unidadesEn(latlng) {
     }
   }
   const ids = new Set(IDX_HEX.get(celdaDe(latlng, HEX.s[0])) || []);
-  for (const id of Object.keys(DET)) if (DET[id].some(a => dentro(a, latlng.lng, latlng.lat))) ids.add(id);
-  return [...ids].filter(id => !DET[id] || DET[id].some(a => dentro(a, latlng.lng, latlng.lat)));
+  for (const [id, d] of Object.entries(DET)) if (d.set.has(celdaDe(latlng, d.s))) ids.add(id);
+  return [...ids].filter(id => !DET[id] || DET[id].set.has(celdaDe(latlng, DET[id].s)));
 }
 function alternarElegida(id, silencioso) {
   const quitar = elegidas.includes(id), u = BYID[id];
@@ -736,7 +777,7 @@ function pintarFicha(u) {
         c.replace('CGCH_GB_', 'GB-').replace('CGCH_', 'Carta ').replace(/_/g, '-')) : c,
       CARTAS[c]?.t ? ` · ${CARTAS[c].t.replace(/^\d{4}\.\s*/, '').slice(0, 80)}` : '', CARTAS[c]?.aprox ? ' (marco aproximado)' : ''))) : 'Solo en la bibliografía'),
     el('dt', {}, 'Ubicación en el mapa'),
-    el('dd', {}, u.pol ? `Cartografiada en las geodatabases (GDB) de ${(u.gc || []).length || u.gdb} carta${((u.gc || []).length || u.gdb) === 1 ? '' : 's'} (marco punteado): fuera de ellas puede seguir aflorando sin cartografía digital. De lejos se muestra en celdas hexagonales, más intensas donde la unidad cubre más de la celda; desde el zoom ${ZOOM_CERCA}, el contorno de la GDB (~40 m). No reemplaza la carta para ubicar contactos.` : u.pts.length ? 'Sin polígonos en las GDB: el punto marca la carta que la describe (marco punteado), no un afloramiento.' : u.lt ? 'Sin polígonos ni carta georreferenciada: solo la localidad tipo.' : 'Sin ubicación: no hay carta georreferenciada que la describa.')].flat(Infinity).filter(Boolean);
+    el('dd', {}, u.pol ? `Cartografiada en las geodatabases (GDB) de ${(u.gc || []).length || u.gdb} carta${((u.gc || []).length || u.gdb) === 1 ? '' : 's'} (marco punteado): fuera de ellas puede seguir aflorando sin cartografía digital. Se dibuja generalizada, con bordes redondeados: la unión de discos sobre una grilla que se afina al acercarse (de ~30 km de lejos a ~600 m desde el zoom ${ZOOM_CERCA}). No es el contorno de la GDB ni reemplaza la carta para ubicar contactos.` : u.pts.length ? 'Sin polígonos en las GDB: el punto marca la carta que la describe (marco punteado), no un afloramiento.' : u.lt ? 'Sin polígonos ni carta georreferenciada: solo la localidad tipo.' : 'Sin ubicación: no hay carta georreferenciada que la describa.')].flat(Infinity).filter(Boolean);
   poner($('#p-ficha'), navFicha('unidades'), el('div', { class: 'ficha' },
     el('h2', {}, u.n, el('span', { class: 'insignia' + (u.rev ? '' : ' auto') }, u.rev ? 'revisada a mano' : 'extracción automática')),
     el('div', { class: 'sub' }, [TIPO[tipoDe(u)].s1, u.cl.map(c => CL[c].n).join(', '), u.amb.join(' / ')].filter(Boolean).join(' · ')),
@@ -785,7 +826,7 @@ mapa.on('click', ev => {
   // respuesta principal: lo cartografiado en este punto; lo «descrito en la carta» va plegado (no está necesariamente aquí)
   L.popup({ maxWidth: Math.min(300, innerWidth - 60), maxHeight: 280 }).setLatLng(ev.latlng).setContent(el('div', {},
     ys.length ? [el('b', {}, 'Yacimientos aquí'), ys.map(byY)] : null,
-    enPol.length ? [el('b', {}, 'Cartografiadas aquí'), el('div', { class: 'ref' }, 'según las GDB, en una celda de ~3 km (contorno exacto en las unidades que tienes en el mapa)'), enPol.map(b)]
+    enPol.length ? [el('b', {}, 'Cartografiadas aquí'), el('div', { class: 'ref' }, 'según las GDB, en una celda de ~3 km (de ~600 m en las unidades que tienes en el mapa, si estás cerca)'), enPol.map(b)]
       : el('div', { class: 'ref' }, `Ninguna unidad cartografiada en este punto${filtro.ints.length || filtro.tipos.size || filtro.lito.size || filtro.q ? ' con los filtros' : ''}.`),
     enCarta.length ? el('details', { class: 'pop-carta' }, el('summary', {}, `Ver las ${fmt(enCarta.length)} descritas en ${cartas.length > 1 ? 'estas cartas' : 'esta carta'}`),
       el('div', { class: 'ref' }, 'Descritas en la carta que cubre este punto: no necesariamente presentes aquí.'),

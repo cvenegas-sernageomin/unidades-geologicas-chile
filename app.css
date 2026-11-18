@@ -325,3 +325,4 @@ h3 small { text-transform: none; letter-spacing: 0; font-weight: 400 }
 #perfil .punto-y:hover circle { stroke: #000; stroke-width: 1.5 }
 #nota-diag-y summary { cursor: pointer; color: var(--acento); font-weight: 600 } #nota-diag-y p { margin: 4px 0 }
 .ini-tabla { display: block; margin-top: 8px; font-size: .85rem }
+.capa-ext { pointer-events: none }

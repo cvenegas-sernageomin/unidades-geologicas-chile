@@ -1,10 +1,14 @@
-"""Extensión de cada unidad para el visor, en dos formas (shell-11, 2026-11-18):
+"""Extensión de cada unidad para el visor (shell-11/13, 2026-11-18).
+
+Desde shell-13 el visor NO dibuja ni el contorno ni las celdas: dibuja la unión de discos centrados en las celdas (bordes
+redondeados, como las franjas de yacimientos), con el radio según cuánto de la celda cubre la unidad. Carlos: «tienen segmentos
+rectos y ángulos agudos, mejor una forma redondeada».
 
 - data/hex.json: celdas hexagonales en Web Mercator (lo que dibuja Leaflet) a cuatro tamaños, para ver de lejos sin fingir
   precisión. Cada celda lleva cuánto de ella cubre la unidad (k = 1..4 → <25 %, <50 %, <75 %, ≥75 %).
   Una celda entra si la unidad cubre ≥ 4 % de ella; cada unidad tiene al menos la celda de su afloramiento mayor.
-- data/pol/<id>.json: el contorno de la GDB casi sin generalizar (~40 m, lo que trae geochile-vectores), solo se pide
-  al acercarse con la unidad elegida.
+- data/pol/<id>.json: {"s": FINO, "c": [q, r, k, …]} celdas finas de la unidad (desde shell-13; antes era el contorno),
+  se piden solo al acercarse con la unidad elegida.
 
 Geometría de la celda (pointy-top, coordenadas axiales q, r; s = radio en metros Mercator):
   x = s·√3·(q + r/2),  y = 1,5·s·r  (y hacia el norte, como L.Projection.SphericalMercator).
@@ -21,6 +25,7 @@ from shapely.ops import unary_union
 R = 6378137.0
 NIVELES = [2000, 5000, 12000, 30000]   # radio de la celda en m Mercator; app.js elige uno según el zoom
 F_MIN = 0.04
+FINO = 600                             # celdas de data/pol/<id>.json (zoom cercano)
 TOL_DET = 0.0002                       # ~20 m: solo bota vértices redundantes (la fuente ya viene a ~40 m)
 S3 = math.sqrt(3)
 
@@ -103,10 +108,11 @@ def armar(geoms_por_unidad, raiz):
     tam = 0
     for uid, geoms in geoms_por_unidad.items():
         det = detalle(geoms)
+        gm0 = merc(MultiPolygon([Polygon(a[0], a[1:]) for a in det]).buffer(0))
         ruta = os.path.join(carpeta, uid + ".json")
-        json.dump(det, open(ruta, "w", encoding="utf-8"), separators=(",", ":"))
+        json.dump({"s": FINO, "c": celdas(gm0.simplify(20), FINO)}, open(ruta, "w", encoding="utf-8"), separators=(",", ":"))
         tam += os.path.getsize(ruta)
-        gm = merc(MultiPolygon([Polygon(a[0], a[1:]) for a in det]).buffer(0)).simplify(50)
+        gm = gm0.simplify(50)
         HEX["u"][uid] = [celdas(gm, s) for s in NIVELES]
     ruta = os.path.join(raiz, "data", "hex.json")
     json.dump(HEX, open(ruta, "w", encoding="utf-8"), separators=(",", ":"))
