@@ -310,3 +310,18 @@ h3 small { text-transform: none; letter-spacing: 0; font-weight: 400 }
 .ini-pie .enlace { display: block; margin-top: 6px; font-weight: 600 }
 .chip-zona { border-style: dashed; color: var(--acento); cursor: pointer; font-weight: 600 }
 @media (max-width: 760px) { .ini-intro { display: none } }
+
+/* ---- shell-12: franjas por edad de los yacimientos y diagrama edad–longitud ---- */
+.franjas-ley { margin: 4px 0 10px }
+.franjas-ley .franja { display: flex; width: 100%; align-items: center; gap: 8px; border: 0; background: none; padding: 4px 2px; font-size: .82rem;
+  text-align: left; cursor: pointer; color: var(--texto) }
+.franjas-ley .franja i { width: 22px; height: 12px; border-radius: 6px; flex: none; opacity: .75; border: 2px solid rgba(0, 0, 0, .35) }
+.franjas-ley .franja small { margin-left: auto; color: var(--texto-2) }
+.franjas-ley .franja.off { opacity: .4; text-decoration: line-through }
+.franjas-ley .nota { margin: 6px 0 0 }
+.capa-franjas { pointer-events: none }
+#diag { margin: 8px 0 }
+#perfil .punto-y { cursor: pointer }
+#perfil .punto-y:hover circle { stroke: #000; stroke-width: 1.5 }
+#nota-diag-y summary { cursor: pointer; color: var(--acento); font-weight: 600 } #nota-diag-y p { margin: 4px 0 }
+.ini-tabla { display: block; margin-top: 8px; font-size: .85rem }

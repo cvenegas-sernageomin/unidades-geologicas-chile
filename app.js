@@ -485,6 +485,12 @@ function pintarIniZona() {
   b.disabled = !n; b.classList.toggle('primario', !!n);
   b.textContent = n ? `Ver las ${fmt(n)} unidades de esta zona del mapa` : 'No hay unidades en esta zona del mapa';
 }
+// la tabla ICS completa (épocas y pisos) vive en «Filtros»: el inicio la abre directo
+$('#ini-tabla').onclick = () => {
+  alternarFiltros('p-unidades', true);
+  $('#d-edad').open = true; pintarTiempo();
+  requestAnimationFrame(() => $('#d-edad').scrollIntoView({ block: 'start' }));
+};
 $('#ini-zona').onclick = () => { filtro.zona = true; aplicar(); };
 $('#ini-todas').onclick = () => { verTodo = true; aplicar(); };
 let tZona;
@@ -625,9 +631,11 @@ $('#reloj-pausa').onclick = () => {
 };
 
 /* ---------------- diagrama tiempo–latitud ---------------- */
+let diag = 'u';  // diagrama de la pestaña «Diagramas»: u = unidades edad–latitud, y = yacimientos edad–longitud (yac.js)
 function pintarPerfil(vis) {
   const caja = $('#perfil');
   if (!$('#p-perfil').classList.contains('on')) return;
+  if (diag === 'y' && typeof pintarDiagY === 'function') { pintarDiagY(); return; }
   const W = Math.max(300, caja.clientWidth || 360), H = 620, m = { l: 34, r: 8, t: 26, b: 28 };
   // fuera los rangos de más de 300 Ma: son unidades con edad mal leída o sin acotar y tapan el resto
   const datos = vis.filter(u => u.mx != null && u.c && u.mx - u.mn <= 300);
@@ -837,6 +845,13 @@ $$('[data-filtros]').forEach(b => b.onclick = () => alternarFiltros(b.dataset.fi
 $$('[data-cerrar]').forEach(b => b.onclick = () => { alternarFiltros(b.dataset.cerrar, false); if (esMovil()) hoja('media'); });
 $$('#color-por button').forEach(b => b.onclick = () => { colorPor = b.dataset.c; $$('#color-por button').forEach(x => x.classList.toggle('on', x === b)); aplicar(false); });
 $$('#f-amb button').forEach(b => b.onclick = () => { filtro.amb = b.dataset.a; $$('#f-amb button').forEach(x => x.classList.toggle('on', x === b)); aplicar(); });
+$$('#diag button').forEach(b => b.onclick = () => {
+  diag = b.dataset.d; $$('#diag button').forEach(x => x.classList.toggle('on', x === b));
+  $('#nota-diag-u').hidden = diag !== 'u'; $('#nota-diag-y').hidden = diag !== 'y';
+  pintarPerfil(U.filter(pasa));
+});
+$('#diag-vista').onchange = () => pintarPerfil(U.filter(pasa));
+mapa.on('moveend', () => { if (diag === 'y' && $('#diag-vista').checked) pintarPerfil(U.filter(pasa)); });
 $$('#escala-t button').forEach(b => b.onclick = () => { escalaT = b.dataset.e; $$('#escala-t button').forEach(x => x.classList.toggle('on', x === b)); pintarPerfil(U.filter(pasa)); });
 $('#f-rev').onchange = e => { filtro.rev = e.target.checked; aplicar(); };
 $('#f-pol').onchange = e => { filtro.pol = e.target.checked; aplicar(); };

@@ -10,7 +10,7 @@
 <link rel="icon" href="icons/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icono-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="app.css?v=11">
+<link rel="stylesheet" href="app.css?v=12">
 </head>
 <body>
 <div id="mapa" aria-label="Mapa de unidades geológicas"></div>
@@ -36,7 +36,7 @@
   <nav id="pestanas" role="tablist">
     <button role="tab" data-p="unidades" class="on"><i>🪨</i>Unidades</button>
     <button role="tab" data-p="yac"><i>⛏️</i>Yacimientos</button>
-    <button role="tab" data-p="perfil"><i>📈</i>Tiempo–latitud</button>
+    <button role="tab" data-p="perfil"><i>📈</i>Diagramas</button>
     <button role="tab" data-p="ficha"><i>📄</i>Ficha</button>
     <button role="tab" data-p="acerca"><i>ℹ️</i>Acerca</button>
   </nav>
@@ -76,7 +76,8 @@
         <div id="abierta" hidden></div>
         <div id="inicio" hidden>
           <p class="ini-intro" id="ini-intro"></p>
-          <div class="puerta"><h4><span>1</span>¿De qué edad?</h4><div id="ini-edad" class="edad-rapida"></div></div>
+          <div class="puerta"><h4><span>1</span>¿De qué edad?</h4><div id="ini-edad" class="edad-rapida"></div>
+            <button class="enlace ini-tabla" id="ini-tabla">Elegir una época o un piso en la tabla cronoestratigráfica</button></div>
           <div class="puerta"><h4><span>2</span>¿De qué rocas?</h4><div id="ini-lito" class="chips"></div></div>
           <div class="puerta"><h4><span>3</span>¿Dónde?</h4>
             <p class="nota">Acerca el mapa a una zona y lista lo que aflora ahí, o toca un punto del mapa para ver qué hay.</p>
@@ -113,12 +114,21 @@
       <div class="lista-zona">
         <label class="buscar buscar-panel"><span aria-hidden="true">🔎</span><input id="y-q" type="search" placeholder="Nombre, distrito, unidad de caja…" autocomplete="off" spellcheck="false"></label>
         <label class="chk"><input type="checkbox" id="y-on"> Mostrar los yacimientos en el mapa <small class="nota">(rombos)</small></label>
+        <label class="chk"><input type="checkbox" id="y-franjas"> Franjas por edad <small class="nota">(dónde se agrupan los yacimientos de cada edad)</small></label>
+        <div id="y-franjas-ley" class="franjas-ley" hidden></div>
         <ol id="y-lista"></ol>
         <p class="nota" id="y-leyenda-nota">Un rombo por yacimiento: tipo, edad del depósito y roca de caja. Elige uno para ver su ficha; la roca de caja se enlaza con la unidad del visor.</p>
       </div>
     </section>
     <section id="p-perfil" class="pag">
-      <p class="nota">Cada barra es una unidad: va de su edad más antigua a la más joven, a la latitud de un punto representativo
+      <div class="segm" id="diag"><button data-d="u" class="on">Unidades: edad–latitud</button><button data-d="y">Yacimientos: edad–longitud</button></div>
+      <div class="nota" id="nota-diag-y" hidden><details><summary>Cómo leer el diagrama</summary><p>Cada punto es un yacimiento con edad (punto medio; la línea vertical, el rango), a su longitud:
+        la costa a la izquierda y la cordillera a la derecha. Así se ve cómo las franjas metalogénicas migran al este con el tiempo. Los
+        yacimientos principales (edades de Maksaev y de Camus) van más grandes. Respeta los filtros de la pestaña «Yacimientos»; quedan
+        fuera las edades supérgenas, los rangos de más de 60 Ma y los no metálicos. Mezcla todas las latitudes: para una sección, encuadra en el mapa una
+        franja de latitud y marca «Solo lo visible en el mapa». La línea vertical (el rango de edad) se dibuja solo si mide 25 Ma o menos.</p></details>
+        <label class="chk"><input type="checkbox" id="diag-vista"> Solo lo visible en el mapa</label></div>
+      <p class="nota" id="nota-diag-u">Cada barra es una unidad: va de su edad más antigua a la más joven, a la latitud de un punto representativo
         (dentro de sus polígonos o en la carta que la describe). Así se ve cómo se distribuyen el magmatismo y la sedimentación de norte
         a sur en el tiempo; el diagrama no muestra desplazamientos este–oeste. Respeta los filtros; elige una barra para ver la ficha.</p>
       <div class="segm" id="escala-t"><button data-e="raiz" class="on">Escala de raíz cuadrada</button><button data-e="lin">Lineal</button></div>
@@ -161,6 +171,10 @@
         <li><b>Maksaev y Townley</b>: edades de los principales depósitos (pórfidos, epitermales, IOCG, hierro, skarn, estratoligados) tomadas a mano del cap. 6
           de <i>The Geology of Chile</i> (2007), de los apuntes del curso de Maksaev (U. de Chile), de las presentaciones y el apunte de Townley
           (DEGY) y de los artículos de su carpeta (El Salvador, Pascua, El Bronce de Petorca, Michilla). Cada edad dice si es del depósito, de la roca asociada o del cinturón.</li>
+        <li><b>Franjas por edad</b> (pestaña «Yacimientos») y <b>diagrama edad–longitud</b> (pestaña «Diagramas»): agrupan los
+          yacimientos metálicos con edad en ocho intervalos, del Paleozoico al Cuaternario. No son un mapa de densidad: la cantidad de
+          registros depende de dónde hay cartas con GDB, y un prospecto pesa lo mismo que un pórfido gigante. Los intervalos son
+          del visor, no una división formal en franjas metalogénicas.</li>
         <li>Un yacimiento de las GDB y uno del MRDS a menos de ~800 m se fundieron en uno. La «edad» de la base a veces es la de la roca
           de caja y no la del depósito: verificar en la fuente antes de citar.</li>
       </ul>
@@ -171,7 +185,7 @@
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js?v=11"></script>
-<script src="yac.js?v=11"></script>
+<script src="app.js?v=12"></script>
+<script src="yac.js?v=12"></script>
 </body>
 </html>
